@@ -3,36 +3,35 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Projeto Evidência: Descubra o Culpado</title>
-  <meta name="description" content="Jogo investigativo educacional de perícia criminal e biologia forense para feira de ciências." />
+  <title>O Mistério da Galeria de Arte | Projeto Evidência</title>
+  <meta name="description" content="Jogo investigativo de perícia criminal para feira de ciências: digitais, tipagem sanguínea e pegadas para descobrir quem matou o dono da galeria." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600;700;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div id="app" class="app">
-    <!-- As telas são renderizadas aqui pelo JavaScript -->
-  </div>
+  <!-- Faixa de isolamento -->
+  <div class="tape">ÁREA ISOLADA — PERÍCIA CRIMINAL EM ANDAMENTO</div>
+
+  <!-- Todas as telas são renderizadas aqui pelo game.js -->
+  <div id="app" class="app"></div>
 
   <!-- Modal de evidência -->
-  <div id="evidence-modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Detalhes da evidência">
+  <div id="modal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Detalhes da evidência">
     <div class="modal-backdrop" id="modal-backdrop"></div>
     <div class="modal-card">
       <div class="modal-header">
         <div class="modal-title-group">
           <span class="modal-icon" id="modal-icon">🔬</span>
-          <div>
-            <div class="modal-id" id="modal-id">EVIDÊNCIA #001</div>
-            <h3 class="modal-title" id="modal-title">Título</h3>
-          </div>
+          <h3 class="modal-title" id="modal-title">Título</h3>
         </div>
         <button class="modal-close" id="modal-close" aria-label="Fechar">✕</button>
       </div>
-      <p class="modal-desc" id="modal-desc">Descrição</p>
+      <p class="modal-desc" id="modal-desc"></p>
       <div class="modal-concept">
-        <div class="concept-label">Conceito Forense</div>
-        <p id="modal-concept">Conceito</p>
+        <div class="concept-label">CONCEITO FORENSE</div>
+        <p id="modal-concept"></p>
       </div>
     </div>
   </div>
