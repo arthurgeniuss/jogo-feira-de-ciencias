@@ -1,1080 +1,558 @@
-/**
- * Projeto Evidência: Descubra o Culpado
- * Jogo educativo em HTML/CSS/JS puro para Feira de Ciências.
- *
- * Conceitos abordados: tipagem sanguínea, impressões digitais, DNA (simulado),
- * cadeia de custódia, documentoscopia, perícia digital e raciocínio lógico.
- */
+/* =========================================================
+   Projeto Evidência — O Mistério da Galeria de Arte
+   Lógica do jogo em JavaScript puro (sem frameworks).
+   Culpada: Vitória Sampaio (código 102).
+   ========================================================= */
 
-// ============================================
-// DADOS DO JOGO
-// ============================================
+/* ---------------------- DADOS ---------------------- */
 
-const CULPADO = "carla";
-
-const suspects = [
-  {
-    id: "ana",
-    nome: "Ana Ferreira",
-    idade: 17,
-    relacao: "Colega de turma da vítima",
-    motivo: "Discussão recente com Lucas sobre um trabalho em grupo.",
-    alibi: "Afirma estar na biblioteca com duas colegas entre 14h e 15h.",
-    tipoSanguineo: "O+",
-    foto: "AF",
-    cor: "oklch(0.65 0.18 30)",
-  },
-  {
-    id: "pedro",
-    nome: "Pedro Santos",
-    idade: 18,
-    relacao: "Amigo próximo da vítima",
-    motivo: "Ciúmes de uma bolsa de estudos concedida a Lucas.",
-    alibi: "Diz ter saído da escola às 14h05 para ir ao dentista.",
-    tipoSanguineo: "B+",
-    foto: "PS",
-    cor: "oklch(0.6 0.18 250)",
-  },
-  {
-    id: "carla",
-    nome: "Carla Oliveira",
-    idade: 24,
-    relacao: "Monitora do laboratório",
-    motivo: "Lucas descobriu que ela desviava reagentes da escola.",
-    alibi: "Afirma não ter entrado no laboratório após 14h.",
-    tipoSanguineo: "A+",
-    foto: "CO",
-    cor: "oklch(0.65 0.15 145)",
-  },
-  {
-    id: "rafael",
-    nome: "Rafael Costa",
-    idade: 20,
-    relacao: "Ex-aluno da escola",
-    motivo: "Ressentimento após ter sido reprovado e denunciado por Lucas.",
-    alibi: "Estava no pátio esperando um amigo, viu movimentação no corredor.",
-    tipoSanguineo: "O-",
-    foto: "RC",
-    cor: "oklch(0.65 0.18 320)",
-  },
+const SUSPEITOS = [
+  { codigo: "101", nome: "Helena Duarte",   genero: "Feminino",  papel: "Curadora da exposição",       altura: "1,62 m", calcado: 36, sangue: "O+",  cabelo: "Preto, liso",       iniciais: "HD", cor: "#d97a5a" },
+  { codigo: "102", nome: "Vitória Sampaio", genero: "Feminino",  papel: "Sócia investidora da galeria",altura: "1,70 m", calcado: 38, sangue: "AB+", cabelo: "Loiro, ondulado",   iniciais: "VS", cor: "#e8c15a" },
+  { codigo: "103", nome: "Marina Rocha",    genero: "Feminino",  papel: "Artista convidada",           altura: "1,58 m", calcado: 35, sangue: "A-",  cabelo: "Castanho, cacheado",iniciais: "MR", cor: "#63b98a" },
+  { codigo: "201", nome: "Otávio Bran",     genero: "Masculino", papel: "Segurança do evento",         altura: "1,80 m", calcado: 41, sangue: "B+",  cabelo: "Preto, curto",      iniciais: "OB", cor: "#6d9be0" },
+  { codigo: "202", nome: "Sérgio Almeida",  genero: "Masculino", papel: "Crítico de arte convidado",   altura: "1,85 m", calcado: 42, sangue: "O-",  cabelo: "Grisalho",          iniciais: "SA", cor: "#a9b2bf" },
+  { codigo: "203", nome: "Diego Farias",    genero: "Masculino", papel: "Garçom do coquetel",          altura: "1,75 m", calcado: 40, sangue: "A+",  cabelo: "Castanho, curto",   iniciais: "DF", cor: "#c47ad0" }
 ];
 
-const evidencias = [
-  {
-    id: 1,
-    titulo: "Fotografia da cena do crime",
-    icone: "📷",
-    descricaoCurta: "Registro fotográfico do laboratório.",
-    descricao:
-      "A vítima foi encontrada caída próxima à bancada central. Uma cadeira tombada e um frasco de reagente quebrado indicam luta corporal. A porta de acesso restrito estava destrancada — apenas monitores possuem chave.",
-    conceito:
-      "Cadeia de custódia: toda cena deve ser fotografada antes que qualquer objeto seja movido, preservando a integridade da prova.",
-  },
-  {
-    id: 2,
-    titulo: "Mancha de sangue A+",
-    icone: "🩸",
-    descricaoCurta: "Sangue encontrado sobre a bancada.",
-    descricao:
-      "Análise laboratorial confirmou tipagem sanguínea A+. A vítima possui sangue tipo O-. Portanto, o sangue pertence ao agressor, que provavelmente se feriu durante a luta.",
-    conceito:
-      "Tipagem sanguínea ABO: os antígenos A e B nas hemácias determinam o tipo. A+ significa antígeno A presente + fator Rh positivo.",
-  },
-  {
-    id: 3,
-    titulo: "Impressão digital em frasco",
-    icone: "🫆",
-    descricaoCurta: "Digital latente revelada com pó preto.",
-    descricao:
-      "Impressão digital do tipo presilha interna foi coletada em um frasco de ácido. O padrão coincide com a ficha biométrica de uma das monitoras cadastradas na escola.",
-    conceito:
-      "Impressões digitais são únicas e imutáveis. Os três padrões principais são arco, presilha e verticilo.",
-  },
-  {
-    id: 4,
-    titulo: "Bilhete rasgado com ameaça",
-    icone: "📝",
-    descricaoCurta: "\"Se você contar, eu acabo com você.\"",
-    descricao:
-      "Fragmentos de papel foram remontados. A caligrafia foi comparada com amostras de escrita dos suspeitos, apresentando forte compatibilidade com uma escrita feminina de traços firmes.",
-    conceito:
-      "Documentoscopia: perícia grafotécnica compara pressão, inclinação e formato das letras para identificar autoria.",
-  },
-  {
-    id: 5,
-    titulo: "Registro eletrônico de acesso",
-    icone: "🔐",
-    descricaoCurta: "Log da fechadura eletrônica do laboratório.",
-    descricao:
-      "O sistema registrou entrada às 14h15 utilizando o cartão da monitora Carla Oliveira — apesar de seu depoimento afirmar que ela não entrou no laboratório naquele horário.",
-    conceito:
-      "Provas digitais também compõem a cadeia de custódia. Logs eletrônicos são admissíveis quando íntegros e datados.",
-  },
-  {
-    id: 6,
-    titulo: "Mensagens do celular da vítima",
-    icone: "📱",
-    descricaoCurta: "Última conversa recuperada.",
-    descricao:
-      "Última mensagem enviada por Lucas às 13h58: \"Vou falar com a Carla agora, ela precisa parar com isso ou vou contar pra diretora.\" Nenhuma resposta foi registrada.",
-    conceito:
-      "Perícia digital: mesmo mensagens apagadas podem ser recuperadas via análise forense de memória flash.",
-  },
+const CULPADO = "102";
+
+const DEPOIMENTOS = [
+  { codigo: "101", texto: "Passei a noite inteira recebendo os convidados na entrada principal. Ouvi um barulho vindo dos fundos por volta das 22h10, mas achei que fosse o pessoal do bufê descarregando caixas. Só entendi o que tinha acontecido quando a polícia chegou." },
+  { codigo: "102", texto: "Discuti com ele sim, sobre dinheiro — todo mundo viu. Mas saí para o pátio tomar ar e não cheguei nem perto da área de serviço. Nunca toquei naquela faca. Este corte na minha mão foi de uma taça que quebrou na cozinha.",
+    contradicao: "O sangue da lâmina é AB+, mesmo tipo dela; a digital da faca coincide com sua ficha; e a pegada em sangue é de calçado feminino nº 38, com estatura estimada de 1,70 m — exatamente seus dados." },
+  { codigo: "103", texto: "Estava montando a última tela na sala 2 com dois assistentes. Vi a Vitória discutindo com o proprietário perto do corredor de serviço, mas não escutei o que diziam. Depois disso fiquei na sala até os gritos." },
+  { codigo: "201", texto: "Sou o segurança. Cheguei a agarrar o proprietário pelo braço mais cedo, porque ele estava alterado e quis expulsar um convidado. Foi um empurra-empurra, nada além disso. Depois voltei para o monitor das câmeras.",
+    contradicao: "Ele admite contato físico com a vítima, mas a única pegada em sangue na cena é de um modelo feminino nº 38 — incompatível com seu calçado nº 41." },
+  { codigo: "202", texto: "Sou crítico, vim escrever sobre a mostra. Falei com o proprietário no início da noite sobre o catálogo e nada mais. Passei o resto do tempo no salão principal, sempre acompanhado." },
+  { codigo: "203", texto: "Circulei a noite toda servindo canapés. Entrei na área de serviço várias vezes para repor as bandejas, é o meu trabalho. Na última vez, por volta das 22h20, a porta dos fundos estava trancada por dentro, o que era estranho." }
 ];
 
-const depoimentos = [
-  {
-    suspeitoId: "ana",
-    texto:
-      "Sim, discuti com o Lucas semana passada, mas foi bobagem. Naquela tarde eu estava na biblioteca com a Júlia e a Marina revisando o trabalho de História. Saímos de lá só depois das 15h, quando começou a confusão.",
-  },
-  {
-    suspeitoId: "pedro",
-    texto:
-      "Fui embora cedo, tinha consulta no dentista às 14h30. Nem passei perto do laboratório. Lucas era meu amigo, jamais faria mal a ele — só fiquei chateado com a bolsa, mas conversamos.",
-  },
-  {
-    suspeitoId: "carla",
-    texto:
-      "Fui a última a ver o Lucas, mas foi só um oi no corredor por volta das 13h50. Depois disso eu fui para a sala dos professores e não voltei ao laboratório. Não tenho ideia do que aconteceu.",
-    contradicao:
-      "O registro eletrônico mostra seu cartão acessando o laboratório às 14h15 — e sua tipagem sanguínea coincide com o sangue encontrado na bancada.",
-  },
-  {
-    suspeitoId: "rafael",
-    texto:
-      "Eu estava no pátio esperando um amigo. Vi gente entrando e saindo do bloco do laboratório, mas não subi. Sim, o Lucas me denunciou uma vez, mas isso já ficou pra trás.",
-  },
+const EVIDENCIAS = [
+  { id: "faca", titulo: "Faca de caça (arma do crime)", icone: "🔪", resumo: "Encontrada ao lado do corpo, com sangue seco na lâmina.",
+    descricao: "Faca de caça de lâmina fixa, 18 cm, abandonada a 40 cm do corpo. A lâmina apresenta sangue de duas origens e o cabo conserva impressões digitais latentes reveladas com pó preto.",
+    conceito: "A arma deve ser fotografada e etiquetada antes de ser movida. Todo deslocamento é registrado na cadeia de custódia." },
+  { id: "pegada", titulo: "Pegada em sangue", icone: "👠", resumo: "Marca de calçado feminino modelo nº 38.",
+    descricao: "Pegada parcial em sangue no piso da área de serviço. Solado de modelo feminino, comprimento compatível com numeração 38. Pela tabela de proporção pé/estatura, a autora tem aproximadamente 1,70 m.",
+    conceito: "O comprimento do pé equivale, em média, a 15% da estatura. Por isso a pegada permite estimar a altura de quem a deixou." },
+  { id: "tipagem", titulo: "Bancada de tipagem sanguínea", icone: "🩸", resumo: "Vítima O-; sangue da lâmina AB+.",
+    descricao: "Testes com soros Anti-A, Anti-B e Anti-D: a amostra da vítima não aglutinou com Anti-A nem Anti-B e não reagiu ao Anti-D (O-). A amostra da lâmina aglutinou com Anti-A, Anti-B e Anti-D (AB+). Logo, parte do sangue é do agressor, ferido durante a luta.",
+    conceito: "Sistema ABO e fator Rh: a aglutinação indica quais antígenos existem nas hemácias." },
+  { id: "cabelo", titulo: "Fio de cabelo na lâmina", icone: "🧬", resumo: "Fio loiro, ondulado, com bulbo preservado.",
+    descricao: "Um fio loiro ondulado ficou preso entre o cabo e a lâmina. O bulbo está preservado, o que permitiria exame de DNA. A vítima tinha cabelo castanho e curto.",
+    conceito: "Tricologia forense: cor, forma da secção e presença de bulbo ajudam a vincular uma pessoa à cena." },
+  { id: "cartoes", titulo: "Cartões de referência de digitais", icone: "🫆", resumo: "Padrões arco, presilha e verticilo para comparação.",
+    descricao: "Fichas datiloscópicas dos seis retidos, para comparação visual com a digital latente coletada no cabo da faca.",
+    conceito: "Impressões digitais são únicas e imutáveis. A identificação exige coincidência de pontos característicos." },
+  { id: "laudo", titulo: "Laudo datiloscópico da faca", icone: "📄", resumo: "Resultado completo da comparação das digitais.", bloqueada: true,
+    descricao: "A digital latente do cabo apresenta padrão verticilo com 14 pontos característicos coincidentes com a ficha da suspeita de código 102. As demais fichas foram excluídas.",
+    conceito: "Doze pontos coincidentes já são considerados suficientes para identificação positiva no Brasil." },
+  { id: "celular", titulo: "Celular da vítima", icone: "📱", resumo: "Mensagens recuperadas da noite do crime.", bloqueada: true,
+    descricao: "Às 21h47 a vítima escreveu: \"A Vitória vai ter que devolver o dinheiro da galeria hoje ou eu levo tudo pro advogado amanhã.\" Às 22h02 recebeu: \"Me encontra nos fundos, vamos resolver isso agora.\"",
+    conceito: "Perícia digital: mensagens, metadados e horários integram a prova e também exigem cadeia de custódia." }
 ];
 
-const timeline = [
-  { hora: "13:58", descricao: "Lucas envia mensagem dizendo que iria confrontar Carla." },
-  { hora: "14:00", descricao: "Vítima entra no laboratório." },
-  { hora: "14:05", descricao: "Pedro Santos é registrado saindo da escola." },
-  { hora: "14:10", descricao: "Ana Ferreira é vista no corredor da biblioteca." },
-  { hora: "14:15", descricao: "Cartão de Carla Oliveira acessa o laboratório." },
-  { hora: "14:20", descricao: "Testemunha relata gritos e discussão vindos do laboratório." },
-  { hora: "14:30", descricao: "Horário estimado do crime (perícia)." },
-  { hora: "14:45", descricao: "Rafael Costa é visto atravessando o pátio." },
-  { hora: "15:00", descricao: "Corpo é encontrado por funcionário da limpeza." },
+const TABELA_ESTATURA = [
+  { calcado: 34, estatura: "1,52 m – 1,56 m" },
+  { calcado: 35, estatura: "1,56 m – 1,60 m" },
+  { calcado: 36, estatura: "1,60 m – 1,65 m" },
+  { calcado: 37, estatura: "1,65 m – 1,68 m" },
+  { calcado: 38, estatura: "1,68 m – 1,72 m" },
+  { calcado: 39, estatura: "1,72 m – 1,76 m" },
+  { calcado: 40, estatura: "1,74 m – 1,78 m" },
+  { calcado: 41, estatura: "1,78 m – 1,82 m" },
+  { calcado: 42, estatura: "1,82 m – 1,87 m" }
 ];
 
-const quiz = [
-  {
-    pergunta: "Qual foi o tipo sanguíneo encontrado na bancada do laboratório?",
-    opcoes: ["O-", "A+", "B+", "AB-"],
-    correta: 1,
-    explicacao: "Análise laboratorial identificou sangue A+, incompatível com o da vítima (O-).",
-  },
-  {
-    pergunta: "Quem foi a última pessoa a ver Lucas com vida, segundo os depoimentos?",
-    opcoes: ["Ana Ferreira", "Pedro Santos", "Carla Oliveira", "Rafael Costa"],
-    correta: 2,
-    explicacao: "Carla admite ter falado com Lucas no corredor pouco antes das 14h.",
-  },
-  {
-    pergunta: "Qual evidência contradiz diretamente o depoimento de Carla?",
-    opcoes: ["Bilhete rasgado", "Registro eletrônico de acesso", "Mensagens do celular", "Fotografia da cena"],
-    correta: 1,
-    explicacao: "O log da fechadura mostra o cartão dela acessando o laboratório às 14h15.",
-  },
-  {
-    pergunta: "O que define a cadeia de custódia?",
-    opcoes: [
-      "A ordem em que os suspeitos são interrogados",
-      "O caminho documentado de cada evidência desde a coleta até o julgamento",
-      "A hierarquia dos peritos",
-      "O tempo entre o crime e a autópsia",
-    ],
-    correta: 1,
-    explicacao: "Cadeia de custódia é o rastreio íntegro e documentado da prova.",
-  },
-  {
-    pergunta: "Impressões digitais são classificadas em três padrões principais. Quais?",
-    opcoes: ["Arco, presilha e verticilo", "Linha, curva e espiral", "Fino, médio e grosso", "A, B e AB"],
-    correta: 0,
-    explicacao: "Padrões dactiloscópicos: arco, presilha (laço) e verticilo (espiral).",
-  },
-  {
-    pergunta: "O sangue A+ significa que:",
-    opcoes: [
-      "Não possui antígenos nas hemácias",
-      "Possui antígeno A e fator Rh positivo",
-      "Possui antígenos A e B",
-      "Só pode doar para tipo O",
-    ],
-    correta: 1,
-    explicacao: "Tipo A+ = antígeno A nas hemácias + fator Rh positivo.",
-  },
-  {
-    pergunta: "Qual suspeito tinha ACESSO oficial ao laboratório?",
-    opcoes: ["Ana", "Pedro", "Carla", "Rafael"],
-    correta: 2,
-    explicacao: "Como monitora, Carla possuía cartão de acesso.",
-  },
-  {
-    pergunta: "Qual foi o provável motivo do crime?",
-    opcoes: [
-      "Vingança por reprovação",
-      "Ciúme por bolsa de estudos",
-      "Silenciar denúncia sobre desvio de reagentes",
-      "Discussão sobre trabalho de História",
-    ],
-    correta: 2,
-    explicacao: "Lucas iria denunciar Carla por desviar reagentes.",
-  },
-  {
-    pergunta: "O que é uma prova digital em investigação criminal?",
-    opcoes: [
-      "Uma prova impressa em papel",
-      "Qualquer informação armazenada eletronicamente que possa ser usada como evidência",
-      "Uma digital coletada com scanner",
-      "Fotos tiradas por celular",
-    ],
-    correta: 1,
-    explicacao: "Provas digitais incluem logs, mensagens, e-mails, arquivos, metadados.",
-  },
-  {
-    pergunta: "Por que o sangue encontrado NÃO pertence à vítima?",
-    opcoes: [
-      "Porque a vítima não sangrou",
-      "Porque tem tipagem diferente da vítima (O-)",
-      "Porque estava seco",
-      "Porque foi analisado tarde demais",
-    ],
-    correta: 1,
-    explicacao: "Vítima é O-; o sangue da cena é A+. Pertence ao agressor.",
-  },
-  {
-    pergunta: "Qual conceito estuda a comparação de escrita manual?",
-    opcoes: ["Balística", "Documentoscopia", "Toxicologia", "Entomologia forense"],
-    correta: 1,
-    explicacao: "Documentoscopia/grafotécnica analisa autoria e autenticidade de escritos.",
-  },
-  {
-    pergunta: "O que é um álibi?",
-    opcoes: [
-      "Uma prova biológica",
-      "Justificativa de onde a pessoa estava no momento do crime",
-      "Um tipo de digital",
-      "Um documento oficial",
-    ],
-    correta: 1,
-    explicacao: "Álibi é a comprovação de estar em outro local no momento do fato.",
-  },
-  {
-    pergunta: "Qual suspeito teve OPORTUNIDADE + MEIO + MOTIVO?",
-    opcoes: ["Ana", "Pedro", "Carla", "Rafael"],
-    correta: 2,
-    explicacao:
-      "Carla tinha acesso (meio), estava no local no horário (oportunidade) e temia ser denunciada (motivo).",
-  },
+const QUIZ = [
+  { pergunta: "Qual é o primeiro procedimento ao chegar a uma cena de crime?", opcoes: ["Recolher a arma para o laboratório", "Isolar o perímetro e registrar a cena por fotografia", "Interrogar os suspeitos", "Cobrir o corpo"], correta: 1, explicacao: "Isolar e fotografar preserva a cena antes de qualquer objeto ser movido." },
+  { pergunta: "O que é cadeia de custódia?", opcoes: ["A ordem dos interrogatórios", "O registro documentado do caminho de cada prova, da coleta ao julgamento", "A hierarquia dos peritos", "O tempo entre o crime e a autópsia"], correta: 1, explicacao: "Sem cadeia de custódia íntegra, a prova pode ser anulada em juízo." },
+  { pergunta: "Por que peritos usam luvas, máscara e jaleco na cena?", opcoes: ["Apenas por uniforme", "Para evitar contaminação da cena e proteger o próprio perito", "Para não sujar a roupa", "Exigência do fotógrafo"], correta: 1, explicacao: "A paramentação evita que DNA, digitais e fibras do perito contaminem as provas." },
+  { pergunta: "Uma amostra aglutinou com Anti-A, Anti-B e Anti-D. Qual o tipo sanguíneo?", opcoes: ["O-", "A+", "B-", "AB+"], correta: 3, explicacao: "Aglutinação nos três soros indica antígenos A, B e fator Rh positivo: AB+." },
+  { pergunta: "O sangue da vítima é O- e o da lâmina é AB+. O que isso indica?", opcoes: ["A amostra foi contaminada", "Parte do sangue pertence ao agressor", "A vítima mudou de tipo sanguíneo", "Nada de relevante"], correta: 1, explicacao: "Tipos diferentes na mesma lâmina indicam uma segunda pessoa ferida na luta." },
+  { pergunta: "O comprimento do pé corresponde, em média, a qual porcentagem da estatura?", opcoes: ["5%", "15%", "25%", "40%"], correta: 1, explicacao: "Cerca de 15% — por isso a pegada permite estimar a altura do autor." },
+  { pergunta: "Uma pegada de calçado feminino nº 38 sugere estatura aproximada de:", opcoes: ["1,50 m", "1,60 m", "1,70 m", "1,85 m"], correta: 2, explicacao: "Pela tabela de proporção, nº 38 corresponde a cerca de 1,68 m a 1,72 m." },
+  { pergunta: "Quais são os três padrões datiloscópicos principais?", opcoes: ["Arco, presilha e verticilo", "Linha, curva e espiral", "Fino, médio e grosso", "A, B e AB"], correta: 0, explicacao: "Arco, presilha (laço) e verticilo (espiral) são os padrões básicos." },
+  { pergunta: "Uma digital latente é revelada principalmente com:", opcoes: ["Água oxigenada", "Pó revelador e pincel", "Luz solar direta", "Álcool em gel"], correta: 1, explicacao: "Pó revelador adere ao suor e à gordura deixados pela crista papilar." },
+  { pergunta: "Por que o bulbo de um fio de cabelo é tão valioso?", opcoes: ["Porque indica a idade", "Porque contém material genético para exame de DNA", "Porque mostra a cor natural", "Porque resiste ao fogo"], correta: 1, explicacao: "O bulbo tem células com núcleo, permitindo o perfil genético." },
+  { pergunta: "Um depoimento que contraria uma prova física deve ser tratado como:", opcoes: ["Verdade, pois a testemunha estava lá", "Indício de contradição a ser investigado", "Prova definitiva de culpa", "Informação irrelevante"], correta: 1, explicacao: "A prova material prevalece; a contradição orienta a investigação." },
+  { pergunta: "O que caracteriza uma prova digital?", opcoes: ["Qualquer prova impressa", "Informação armazenada eletronicamente usada como evidência", "Somente digitais coletadas por scanner", "Fotos tiradas por celular"], correta: 1, explicacao: "Logs, mensagens, metadados e arquivos são provas digitais." }
 ];
 
-// ============================================
-// ESTADO DO JOGO
-// ============================================
+const PROVAS = [
+  { id: "p1", rotulo: "Pegada de calçado feminino nº 38 compatível com 1,70 m", correta: true },
+  { id: "p2", rotulo: "Sangue AB+ na lâmina, igual ao tipo da acusada", correta: true },
+  { id: "p3", rotulo: "Digital do cabo da faca com 14 pontos coincidentes", correta: true },
+  { id: "p4", rotulo: "Fio de cabelo loiro preso na lâmina", correta: true },
+  { id: "p5", rotulo: "Mensagem da vítima cobrando dinheiro da galeria", correta: true },
+  { id: "p6", rotulo: "Depoimento do segurança sobre o empurra-empurra", correta: false },
+  { id: "p7", rotulo: "Porta dos fundos trancada por dentro às 22h20", correta: false },
+  { id: "p8", rotulo: "Cabelo grisalho de um dos convidados", correta: false }
+];
 
-const state = {
-  screen: "intro",
-  started: false,
-  elapsed: 0,
-  visited: new Set(),
-  quizAnswers: {},
-  quizSubmitted: false,
-  acusado: null,
-  nomeJogador: "",
-  ranking: [],
-  timerId: null,
-  startTime: 0,
+const PASSOS = [
+  { icone: "🥼", titulo: "Paramentação", texto: "Vista jaleco, luvas e máscara antes de entrar na área isolada." },
+  { icone: "🧪", titulo: "Bancada de tipagem", texto: "Teste as amostras com os soros Anti-A, Anti-B e Anti-D e anote os tipos." },
+  { icone: "📏", titulo: "Análise da pegada", texto: "Meça a pegada com a régua e estime a estatura pela tabela de proporção." },
+  { icone: "🔎", titulo: "Consulta no app", texto: "Digite os 6 códigos das placas para abrir as fichas e ler os depoimentos." },
+  { icone: "🧠", titulo: "Quiz de perícia", texto: "Acerte as questões para liberar o laudo das digitais e o celular da vítima." },
+  { icone: "⚖️", titulo: "Veredito", texto: "Elimine os incompatíveis e envie a acusação com as provas que a sustentam." }
+];
+
+const MENU = [
+  { id: "roteiro",     rotulo: "Roteiro do perito",   icone: "🧭" },
+  { id: "fichas",      rotulo: "Fichas por código",   icone: "🪪" },
+  { id: "depoimentos", rotulo: "Depoimentos",         icone: "🗣️" },
+  { id: "evidencias",  rotulo: "Laboratório",         icone: "🔬" },
+  { id: "estatura",    rotulo: "Tabela de estatura",  icone: "📏" },
+  { id: "quiz",        rotulo: "Quiz de perícia",     icone: "🧠" },
+  { id: "acusacao",    rotulo: "Acusação",            icone: "⚖️" }
+];
+
+const RANKING_KEY = "galeria-ranking-v1";
+
+/* ---------------------- ESTADO ---------------------- */
+
+const estado = {
+  tela: "intro",
+  equipe: "",
+  inicio: null,
+  tempo: 0,
+  tempoFinal: 0,
+  codigo: "",
+  erroCodigo: "",
+  consultados: [],
+  fichaAberta: null,
+  respostas: {},
+  quizConcluido: false,
+  codigoAcusado: "",
+  provasMarcadas: [],
+  erroAcusacao: "",
+  acertou: false,
+  ranking: carregarRanking()
 };
 
-// Elementos do DOM
+/* ---------------------- UTILITÁRIOS ---------------------- */
+
 const app = document.getElementById("app");
-const modal = document.getElementById("evidence-modal");
-const modalBackdrop = document.getElementById("modal-backdrop");
-const modalClose = document.getElementById("modal-close");
+const esc = (t) => String(t).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-// ============================================
-// FUNÇÕES AUXILIARES
-// ============================================
-
-function formatTempo(s) {
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${m}:${sec}`;
+function formatarTempo(s) {
+  const m = String(Math.floor(s / 60)).padStart(2, "0");
+  return m + ":" + String(s % 60).padStart(2, "0");
 }
 
-function nivelInvestigador(pct) {
-  if (pct <= 40) return "Investigador Iniciante";
-  if (pct <= 70) return "Investigador Experiente";
-  if (pct <= 90) return "Perito Forense";
-  return "Especialista Criminal";
+function carregarRanking() {
+  try { return JSON.parse(localStorage.getItem(RANKING_KEY)) || []; } catch (e) { return []; }
 }
 
-function beep() {
+function salvarRanking(lista) {
+  try { localStorage.setItem(RANKING_KEY, JSON.stringify(lista)); } catch (e) { /* sem persistência */ }
+}
+
+// Som curto opcional (Web Audio API) — usado em acertos e no veredito
+function beep(freq) {
   try {
-    const AudioContext = window.AudioContext || window.webkitAudioContext;
-    const ctx = new AudioContext();
-    const o = ctx.createOscillator();
-    const g = ctx.createGain();
-    o.connect(g);
-    g.connect(ctx.destination);
-    o.frequency.value = 440;
-    g.gain.value = 0.05;
-    o.start();
-    setTimeout(() => {
-      o.stop();
-      ctx.close();
-    }, 80);
-  } catch (e) {
-    // Som opcional — silenciosamente ignorar erro
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.frequency.value = freq;
+    osc.connect(gain); gain.connect(ctx.destination);
+    gain.gain.setValueAtTime(0.06, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.2);
+    osc.start(); osc.stop(ctx.currentTime + 0.2);
+  } catch (e) { /* áudio indisponível */ }
+}
+
+function acertosQuiz() {
+  return QUIZ.reduce((t, q, i) => (estado.respostas[i] === q.correta ? t + 1 : t), 0);
+}
+
+function pontosProvas() {
+  let p = 0;
+  PROVAS.forEach((pr) => {
+    if (estado.provasMarcadas.indexOf(pr.id) !== -1) p += pr.correta ? 1 : -1;
+  });
+  return p;
+}
+
+function progresso() {
+  const fichas = (estado.consultados.length / SUSPEITOS.length) * 40;
+  const q = (Object.keys(estado.respostas).length / QUIZ.length) * 40;
+  const fim = estado.tela === "resultado" ? 20 : 0;
+  return Math.min(100, Math.round(fichas + q + fim));
+}
+
+function nivel() {
+  if (!estado.acertou) return "Estagiário";
+  const pts = acertosQuiz() + Math.max(0, pontosProvas());
+  if (pts >= 15) return "Perito-chefe";
+  if (pts >= 11) return "Perito Criminal";
+  return "Assistente de perícia";
+}
+
+/* ---------------------- TEMPORIZADOR ---------------------- */
+
+setInterval(() => {
+  if (estado.inicio === null || estado.tela === "resultado" || estado.tela === "intro") return;
+  estado.tempo = Math.floor((Date.now() - estado.inicio) / 1000);
+  const el = document.getElementById("timer");
+  if (el) el.textContent = formatarTempo(estado.tempo);
+}, 1000);
+
+/* ---------------------- TELAS ---------------------- */
+
+function telaIntro() {
+  return `
+    <div class="intro">
+      <p class="kicker">PROJETO EVIDÊNCIA</p>
+      <h1>O Mistério da Galeria de Arte</h1>
+      <div class="card">
+        <p>Durante o coquetel VIP de inauguração de uma exposição no centro da cidade, o proprietário da galeria foi encontrado morto nos fundos do estabelecimento. A arma usada foi uma faca de caça deixada na cena.</p>
+        <p>A polícia isolou o perímetro com <strong>6 pessoas retidas</strong> — 3 mulheres e 3 homens, entre convidados e funcionários. Sua equipe de perícia foi chamada para coletar as provas na sala, analisar os dados neste aplicativo e apontar a autoria.</p>
+      </div>
+      <label class="muted">Nome da equipe de perícia
+        <input id="equipe" class="input" style="margin-top:8px" placeholder="Ex.: Equipe Alfa" value="${esc(estado.equipe)}" />
+      </label>
+      <button class="btn" data-acao="iniciar">Iniciar investigação</button>
+    </div>`;
+}
+
+function sidebar() {
+  return `
+    <aside class="sidebar">
+      <div class="card">
+        <p class="kicker">CASO GALERIA</p>
+        <p class="muted">${esc(estado.equipe || "Equipe sem nome")}</p>
+        <div class="status-row"><span class="muted">Tempo</span><span class="timer" id="timer">${formatarTempo(estado.tempo)}</span></div>
+        <div class="status-row"><span class="muted">Progresso</span><span>${progresso()}%</span></div>
+        <div class="bar"><div style="width:${progresso()}%"></div></div>
+      </div>
+      <nav class="nav">
+        ${MENU.map((m) => `<button data-tela="${m.id}" class="${estado.tela === m.id ? "active" : ""}">${m.icone} ${m.rotulo}</button>`).join("")}
+      </nav>
+    </aside>`;
+}
+
+function telaRoteiro() {
+  return bloco("Roteiro do perito", "Siga a ordem dos procedimentos na sala.", `
+    <div class="grid grid-2">
+      ${PASSOS.map((p, i) => `
+        <div class="tile">
+          <span class="icon">${p.icone}</span>
+          <p class="kicker">PASSO ${i + 1}</p>
+          <h3>${p.titulo}</h3>
+          <p class="muted">${p.texto}</p>
+        </div>`).join("")}
+    </div>`);
+}
+
+function telaFichas() {
+  const s = SUSPEITOS.find((x) => x.codigo === estado.fichaAberta);
+  const ficha = !s ? "" : `
+    <div class="card" style="margin-top:16px">
+      <div class="ficha-head">
+        <div class="avatar" style="background:${s.cor}">${s.iniciais}</div>
+        <div>
+          <p class="kicker">CÓDIGO ${s.codigo}</p>
+          <h3 style="font-size:22px">${s.nome}</h3>
+          <p class="muted">${s.papel}</p>
+        </div>
+      </div>
+      <div class="dados">
+        <div class="dado"><span>Gênero</span>${s.genero}</div>
+        <div class="dado"><span>Altura</span>${s.altura}</div>
+        <div class="dado"><span>Número do calçado</span>${s.calcado}</div>
+        <div class="dado"><span>Tipo sanguíneo</span>${s.sangue}</div>
+        <div class="dado"><span>Cabelo</span>${s.cabelo}</div>
+      </div>
+    </div>`;
+
+  return bloco("Fichas por código", "Digite o código da placa que o suspeito está segurando na sala.", `
+    <div class="card">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:center">
+        <input id="codigo" class="input input-code" inputmode="numeric" maxlength="3" placeholder="000" value="${esc(estado.codigo)}" />
+        <button class="btn" style="width:auto" data-acao="consultar">Consultar ficha</button>
+      </div>
+      <div class="keys">
+        ${["1", "2", "3", "0", "⌫"].map((t) => `<button data-tecla="${t}">${t}</button>`).join("")}
+      </div>
+      ${estado.erroCodigo ? `<p class="error">${esc(estado.erroCodigo)}</p>` : ""}
+      <p class="muted" style="margin-top:12px">Fichas consultadas: ${estado.consultados.length}/${SUSPEITOS.length}${estado.consultados.length ? " — " + estado.consultados.join(", ") : ""}</p>
+    </div>
+    ${ficha}`);
+}
+
+function telaDepoimentos() {
+  return bloco("Relatório de depoimentos", "Cada depoimento é liberado depois que a ficha do suspeito é consultada.", `
+    <div class="grid">
+      ${DEPOIMENTOS.map((d) => {
+        const s = SUSPEITOS.find((x) => x.codigo === d.codigo);
+        const liberado = estado.consultados.indexOf(d.codigo) !== -1;
+        if (!liberado) {
+          return `<div class="card"><h3>Depoimento reservado <span class="kicker">#${d.codigo}</span></h3>
+            <p class="muted" style="margin-top:8px">🔒 Consulte o código ${d.codigo} na tela de fichas para liberar.</p></div>`;
+        }
+        let extra = "";
+        if (d.contradicao) {
+          extra = estado.quizConcluido
+            ? `<p class="contradiction"><strong>Contradição:</strong> ${d.contradicao}</p>`
+            : `<p class="lock-note">🔒 Há uma análise de contradição neste depoimento — conclua o quiz para liberar.</p>`;
+        }
+        return `<div class="card"><h3>${s.nome} <span class="kicker">#${d.codigo}</span></h3>
+          <p class="quote">"${d.texto}"</p>${extra}</div>`;
+      }).join("")}
+    </div>`);
+}
+
+function telaEvidencias() {
+  return bloco("Laboratório de evidências", "Toque em uma evidência para ver o laudo e o conceito forense.", `
+    <div class="grid grid-2">
+      ${EVIDENCIAS.map((ev) => {
+        const travada = ev.bloqueada && !estado.quizConcluido;
+        return `<button class="tile ${travada ? "locked" : ""}" data-evidencia="${ev.id}">
+          <span class="icon">${travada ? "🔒" : ev.icone}</span>
+          <h3>${ev.titulo}</h3>
+          <p class="muted">${travada ? "Liberado após o quiz de perícia." : ev.resumo}</p>
+        </button>`;
+      }).join("")}
+    </div>`);
+}
+
+function telaEstatura() {
+  return bloco("Tabela de estatura por calçado", "O comprimento do pé equivale a cerca de 15% da altura da pessoa.", `
+    <div class="card" style="padding:0;overflow:hidden">
+      <table>
+        <thead><tr><th>Número do calçado</th><th>Estatura estimada</th></tr></thead>
+        <tbody>
+          ${TABELA_ESTATURA.map((l) => `<tr class="${l.calcado === 38 ? "highlight" : ""}"><td>${l.calcado}</td><td>${l.estatura}</td></tr>`).join("")}
+        </tbody>
+      </table>
+    </div>
+    <p class="muted" style="margin-top:12px">A pegada em sangue medida na cena corresponde ao número 38 em modelo feminino.</p>`);
+}
+
+function telaQuiz() {
+  const respondidas = Object.keys(estado.respostas).length;
+  return bloco("Quiz de perícia", `Acertos: ${acertosQuiz()}/${QUIZ.length} — concluir libera o laudo das digitais e o celular da vítima.`, `
+    <div class="grid">
+      ${QUIZ.map((q, i) => {
+        const r = estado.respostas[i];
+        const revelar = r !== undefined;
+        return `<div class="card">
+          <p class="kicker">QUESTÃO ${i + 1}</p>
+          <h3 style="font-size:18px">${q.pergunta}</h3>
+          ${q.opcoes.map((o, oi) => {
+            let cls = "opt";
+            if (revelar && oi === q.correta) cls += " correct";
+            else if (revelar && oi === r) cls += " wrong";
+            return `<button class="${cls}" data-q="${i}" data-o="${oi}">${o}</button>`;
+          }).join("")}
+          ${revelar ? `<p class="muted" style="margin-top:10px">${q.explicacao}</p>` : ""}
+        </div>`;
+      }).join("")}
+    </div>
+    <button class="btn" style="margin-top:16px" data-acao="concluir-quiz" ${respondidas < QUIZ.length || estado.quizConcluido ? "disabled" : ""}>
+      ${estado.quizConcluido ? "Laudos liberados ✔" : `Concluir quiz (${respondidas}/${QUIZ.length})`}
+    </button>`);
+}
+
+function telaAcusacao() {
+  return bloco("Tela de acusação", "Informe o código do suspeito e marque as provas que comprovam a autoria.", `
+    <div class="card">
+      <label class="muted">Código do acusado
+        <input id="acusado" class="input input-code" style="margin-top:8px" inputmode="numeric" maxlength="3" placeholder="000" value="${esc(estado.codigoAcusado)}" />
+      </label>
+      <p class="muted" style="margin-top:20px">Provas que sustentam a acusação</p>
+      <div class="grid" style="margin-top:8px">
+        ${PROVAS.map((p) => {
+          const on = estado.provasMarcadas.indexOf(p.id) !== -1;
+          return `<button class="check ${on ? "on" : ""}" data-prova="${p.id}"><span>${on ? "☑" : "☐"}</span> ${p.rotulo}</button>`;
+        }).join("")}
+      </div>
+      ${estado.erroAcusacao ? `<p class="error">${esc(estado.erroAcusacao)}</p>` : ""}
+      <button class="btn btn-accent" style="margin-top:16px" data-acao="veredito">Enviar veredito</button>
+    </div>`);
+}
+
+function telaResultado() {
+  return bloco("Laudo final", "Resultado da investigação da sua equipe.", `
+    <div class="card result ${estado.acertou ? "win" : "lose"}">
+      <h3 style="font-size:22px">${estado.acertou ? "Caso solucionado! 🎉" : "Acusação incorreta"}</h3>
+      <p class="muted" style="margin-top:8px">A autora do crime é <strong style="color:var(--fg)">Vitória Sampaio</strong> (código 102): calçado nº 38 e 1,70 m compatíveis com a pegada, sangue AB+ igual ao da lâmina, digital no cabo da faca e fio de cabelo loiro na arma.</p>
+      <div class="grid grid-4" style="margin-top:20px">
+        <div class="metric"><span>Quiz</span><strong>${acertosQuiz()}/${QUIZ.length}</strong></div>
+        <div class="metric"><span>Aproveitamento</span><strong>${Math.round((acertosQuiz() / QUIZ.length) * 100)}%</strong></div>
+        <div class="metric"><span>Tempo</span><strong>${formatarTempo(estado.tempoFinal)}</strong></div>
+        <div class="metric"><span>Nível</span><strong>${nivel()}</strong></div>
+      </div>
+    </div>
+    <div class="card" style="margin-top:16px">
+      <h3 style="font-size:18px">Ranking local</h3>
+      <div class="grid" style="margin-top:12px">
+        ${estado.ranking.map((r, i) => `<div class="rank-item"><span>${i + 1}. ${esc(r.equipe)} ${r.acertou ? "✔" : "✘"}</span><span class="muted">${r.quizAcertos}/${QUIZ.length} · ${formatarTempo(r.tempo)} · ${r.nivel}</span></div>`).join("")}
+      </div>
+    </div>
+    <button class="btn" style="margin-top:16px" data-acao="reiniciar">Nova investigação</button>`);
+}
+
+function bloco(titulo, subtitulo, conteudo) {
+  return `<section class="screen"><h2>${titulo}</h2><p class="muted">${subtitulo}</p>${conteudo}</section>`;
+}
+
+/* ---------------------- RENDER ---------------------- */
+
+function render() {
+  if (estado.tela === "intro") {
+    app.innerHTML = telaIntro();
+    return;
   }
+  const telas = {
+    roteiro: telaRoteiro,
+    fichas: telaFichas,
+    depoimentos: telaDepoimentos,
+    evidencias: telaEvidencias,
+    estatura: telaEstatura,
+    quiz: telaQuiz,
+    acusacao: telaAcusacao,
+    resultado: telaResultado
+  };
+  app.innerHTML = `<div class="layout">${sidebar()}<div>${telas[estado.tela]()}</div></div>`;
 }
 
-function loadRanking() {
-  try {
-    const r = localStorage.getItem("evidencia_ranking");
-    if (r) state.ranking = JSON.parse(r);
-  } catch (e) {
-    state.ranking = [];
+/* ---------------------- AÇÕES ---------------------- */
+
+function consultarCodigo() {
+  const campo = document.getElementById("codigo");
+  const valor = (campo ? campo.value : estado.codigo).trim();
+  const s = SUSPEITOS.find((x) => x.codigo === valor);
+  if (!s) {
+    estado.erroCodigo = "Código não consta no cadastro de retidos. Confira a placa.";
+    estado.fichaAberta = null;
+  } else {
+    estado.erroCodigo = "";
+    estado.fichaAberta = s.codigo;
+    if (estado.consultados.indexOf(s.codigo) === -1) estado.consultados.push(s.codigo);
+    estado.codigo = "";
+    beep(660);
   }
-}
-
-function saveRanking() {
-  try {
-    localStorage.setItem("evidencia_ranking", JSON.stringify(state.ranking));
-  } catch (e) {
-    // Ignora restrições de armazenamento
-  }
-}
-
-function getAcertos() {
-  return quiz.reduce((acc, q, i) => (state.quizAnswers[i] === q.correta ? acc + 1 : acc), 0);
-}
-
-function getProgresso() {
-  const telasChave = ["suspeitos", "evidencias", "depoimentos", "timeline", "quiz"];
-  const telasVisitadas = telasChave.filter((t) => state.visited.has(t)).length;
-  const pctTelas = (telasVisitadas / telasChave.length) * 30;
-  const pctAcertos = (getAcertos() / quiz.length) * 50;
-  const pctAcusacao = state.acusado === CULPADO ? 20 : 0;
-  return Math.round(pctTelas + pctAcertos + pctAcusacao);
-}
-
-function navigateTo(screen) {
-  state.screen = screen;
-  state.visited.add(screen);
   render();
 }
 
-// ============================================
-// RENDERIZAÇÃO DAS TELAS
-// ============================================
-
-function render() {
-  app.innerHTML = "";
-
-  if (state.screen === "intro" && !state.started) {
-    renderIntro();
-  } else if (state.screen === "resultado") {
-    renderResultado();
-  } else {
-    renderDashboard();
-  }
-}
-
-function renderIntro() {
-  const rankingHtml = state.ranking.length
-    ? `
-      <div class="evidence-card ranking-box">
-        <h4 class="font-display text-primary" style="margin-bottom:0.75rem;">🏆 Ranking Local (Top 5)</h4>
-        <ol class="ranking-list">
-          ${state.ranking
-            .slice(0, 5)
-            .map(
-              (r, i) => `
-            <li>
-              <span>${i + 1}. ${r.nome} ${r.culpadoCorreto ? "✅" : "❌"}</span>
-              <span class="text-muted">${r.acertos}/${r.total} · ${formatTempo(r.tempo)}</span>
-            </li>
-          `,
-            )
-            .join("")}
-        </ol>
-      </div>
-    `
-    : "";
-
-  app.innerHTML = `
-    <div class="intro-screen">
-      <div class="intro-bg"></div>
-      <div class="intro-scanline"></div>
-      <div class="police-tape py-2">⚠ CENA DE CRIME · NÃO ULTRAPASSE · PERÍCIA EM ANDAMENTO ⚠</div>
-
-      <div class="intro-content">
-        <div class="case-header">
-          <div class="case-logo">PE</div>
-          <div>
-            <div class="case-meta">Departamento de Perícia Escolar</div>
-            <div class="case-file">Arquivo Confidencial #007</div>
-          </div>
-        </div>
-
-        <h1 class="intro-title font-display">Projeto Evidência</h1>
-        <h2 class="intro-subtitle font-display">Descubra o Culpado</h2>
-
-        <div class="evidence-card" style="padding:1.5rem; margin-bottom:1.5rem;">
-          <div style="display:flex; align-items:center; gap:0.5rem; margin-bottom:0.75rem;">
-            <span style="font-size:1.25rem;">🔍</span>
-            <h3 class="font-display" style="font-size:1.125rem;">Sobre o Caso</h3>
-          </div>
-          <p class="text-muted" style="font-size:0.95rem; line-height:1.6;">
-            O aluno <strong class="text-primary">Lucas Andrade</strong> foi encontrado sem vida no laboratório da escola
-            após o término das aulas. Quatro suspeitos foram identificados. Como perito(a) forense, você deve analisar
-            evidências, ouvir depoimentos, cruzar a linha do tempo e apontar o culpado. Utilize conceitos de
-            <span class="text-primary">Biologia Forense</span>, <span class="text-primary">Perícia Criminal</span> e
-            <span class="text-primary">raciocínio lógico</span>.
-          </p>
-        </div>
-
-        <div class="topics-grid">
-          <div class="evidence-card topic-card">
-            <div class="icon">🩸</div>
-            <div class="text-muted">Tipagem sanguínea</div>
-          </div>
-          <div class="evidence-card topic-card">
-            <div class="icon">🫆</div>
-            <div class="text-muted">Impressões digitais</div>
-          </div>
-          <div class="evidence-card topic-card">
-            <div class="icon">🧬</div>
-            <div class="text-muted">DNA (simulado)</div>
-          </div>
-          <div class="evidence-card topic-card">
-            <div class="icon">🔐</div>
-            <div class="text-muted">Cadeia de custódia</div>
-          </div>
-        </div>
-
-        <div>
-          <label class="input-label" for="nome-jogador">Nome do(a) Perito(a)</label>
-          <input
-            id="nome-jogador"
-            type="text"
-            class="text-input"
-            placeholder="Digite seu nome"
-            value="${state.nomeJogador}"
-            maxlength="30"
-          />
-        </div>
-
-        <button class="btn-primary" id="btn-iniciar">Iniciar Investigação →</button>
-
-        ${rankingHtml}
-      </div>
-    </div>
-  `;
-
-  document.getElementById("nome-jogador").addEventListener("input", (e) => {
-    state.nomeJogador = e.target.value;
-  });
-
-  document.getElementById("btn-iniciar").addEventListener("click", () => {
-    beep();
-    iniciarInvestigacao();
-  });
-}
-
-function iniciarInvestigacao() {
-  state.started = true;
-  state.elapsed = 0;
-  state.visited = new Set();
-  state.quizAnswers = {};
-  state.quizSubmitted = false;
-  state.acusado = null;
-  state.startTime = Date.now();
-
-  if (state.timerId) clearInterval(state.timerId);
-  state.timerId = setInterval(() => {
-    state.elapsed = Math.floor((Date.now() - state.startTime) / 1000);
-    updateDashboardStats();
-  }, 1000);
-
-  navigateTo("suspeitos");
-}
-
-function renderDashboard() {
-  const menu = [
-    { id: "suspeitos", label: "Suspeitos", icone: "👥" },
-    { id: "evidencias", label: "Evidências", icone: "🔬" },
-    { id: "depoimentos", label: "Depoimentos", icone: "💬" },
-    { id: "timeline", label: "Linha do Tempo", icone: "⏱" },
-    { id: "quiz", label: "Quiz", icone: "❓" },
-    { id: "acusar", label: "Acusar", icone: "⚖️" },
-  ];
-
-  const progresso = getProgresso();
-
-  app.innerHTML = `
-    <div class="dashboard">
-      <aside class="sidebar">
-        <div class="sidebar-header">
-          <div class="sidebar-brand">
-            <div class="sidebar-brand-logo">PE</div>
-            <div style="min-width:0;">
-              <div class="sidebar-brand-title">Projeto Evidência</div>
-              <div class="sidebar-brand-subtitle">Perito(a): ${state.nomeJogador || "Anônimo"}</div>
-            </div>
-          </div>
-          <div class="sidebar-stats">
-            <div class="sidebar-stat">
-              <div class="sidebar-stat-label">Tempo</div>
-              <div class="sidebar-stat-value" id="timer">${formatTempo(state.elapsed)}</div>
-            </div>
-            <div class="sidebar-stat">
-              <div class="sidebar-stat-label">Progresso</div>
-              <div class="sidebar-stat-value" id="progress">${progresso}%</div>
-            </div>
-          </div>
-          <div class="sidebar-progress">
-            <div class="sidebar-progress-bar" id="progress-bar" style="width:${progresso}%"></div>
-          </div>
-        </div>
-
-        <nav class="sidebar-nav">
-          ${menu
-            .map(
-              (m) => `
-            <button class="nav-button ${state.screen === m.id ? "active" : ""}" data-screen="${m.id}">
-              <span>${m.icone}</span>
-              <span>${m.label}</span>
-            </button>
-          `,
-            )
-            .join("")}
-        </nav>
-      </aside>
-
-      <main class="main-content">
-        <div class="police-tape py-1">⚠ INVESTIGAÇÃO CONFIDENCIAL · ACESSO RESTRITO ⚠</div>
-        <div class="main-inner" id="main-inner">
-          <!-- Conteúdo da tela ativa será injetado aqui -->
-        </div>
-      </main>
-    </div>
-  `;
-
-  app.querySelectorAll(".nav-button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      beep();
-      navigateTo(btn.dataset.screen);
-    });
-  });
-
-  renderDashboardContent();
-}
-
-function updateDashboardStats() {
-  const timer = document.getElementById("timer");
-  const progress = document.getElementById("progress");
-  const progressBar = document.getElementById("progress-bar");
-  if (timer) timer.textContent = formatTempo(state.elapsed);
-  if (progress) progress.textContent = `${getProgresso()}%`;
-  if (progressBar) progressBar.style.width = `${getProgresso()}%`;
-}
-
-function renderDashboardContent() {
-  const main = document.getElementById("main-inner");
-  if (!main) return;
-
-  switch (state.screen) {
-    case "suspeitos":
-      renderSuspeitos(main);
-      break;
-    case "evidencias":
-      renderEvidencias(main);
-      break;
-    case "depoimentos":
-      renderDepoimentos(main);
-      break;
-    case "timeline":
-      renderTimeline(main);
-      break;
-    case "quiz":
-      renderQuiz(main);
-      break;
-    case "acusar":
-      renderAcusar(main);
-      break;
-  }
-}
-
-function sectionHeader(titulo, subtitulo, icone) {
-  return `
-    <header class="section-header">
-      <div class="section-header-row">
-        <span class="section-icon">${icone}</span>
-        <div>
-          <h2 class="section-title font-display">${titulo}</h2>
-          <p class="section-subtitle">${subtitulo}</p>
-        </div>
-      </div>
-      <div class="section-divider"></div>
-    </header>
-  `;
-}
-
-function renderSuspeitos(container) {
-  const cards = suspects
-    .map(
-      (s) => `
-      <article class="evidence-card suspect-card">
-        <div class="suspect-header">
-          <div class="suspect-avatar" style="background:${s.cor}">${s.foto}</div>
-          <div style="min-width:0;">
-            <h3 class="suspect-name font-display">${s.nome}</h3>
-            <p class="suspect-info">${s.idade} anos · ${s.relacao}</p>
-          </div>
-        </div>
-        <dl class="fields-list">
-          <div class="field-row">
-            <dt class="field-label">Motivo</dt>
-            <dd>${s.motivo}</dd>
-          </div>
-          <div class="field-row">
-            <dt class="field-label">Álibi</dt>
-            <dd>${s.alibi}</dd>
-          </div>
-          <div class="field-row">
-            <dt class="field-label">Tipo Sanguíneo</dt>
-            <dd><span class="badge">${s.tipoSanguineo}</span></dd>
-          </div>
-        </dl>
-      </article>
-    `,
-    )
-    .join("");
-
-  container.innerHTML = `
-    <section>
-      ${sectionHeader("Suspeitos", "Perfis completos das quatro pessoas de interesse.", "👥")}
-      <div class="suspects-grid">${cards}</div>
-      <div class="concept-box">
-        <strong>Tipagem sanguínea:</strong> compare o tipo de cada suspeito com o sangue encontrado na cena.
-        O grupo ABO é determinado pela presença dos antígenos A e B; o fator Rh (+/−) completa a classificação.
-      </div>
-    </section>
-  `;
-}
-
-function renderEvidencias(container) {
-  const cards = evidencias
-    .map(
-      (e) => `
-      <button class="evidence-card evidence-button" data-id="${e.id}">
-        <div class="evidence-top">
-          <span class="evidence-icon">${e.icone}</span>
-          <span class="evidence-id">EV-${String(e.id).padStart(3, "0")}</span>
-        </div>
-        <h3 class="evidence-title font-display">${e.titulo}</h3>
-        <p class="evidence-short">${e.descricaoCurta}</p>
-      </button>
-    `,
-    )
-    .join("");
-
-  container.innerHTML = `
-    <section>
-      ${sectionHeader("Evidências", "Materiais coletados na cena — clique para analisar.", "🔬")}
-      <div class="evidence-grid">${cards}</div>
-    </section>
-  `;
-
-  container.querySelectorAll(".evidence-button").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      beep();
-      abrirEvidencia(Number(btn.dataset.id));
-    });
-  });
-}
-
-function abrirEvidencia(id) {
-  const ev = evidencias.find((e) => e.id === id);
-  if (!ev) return;
-
-  document.getElementById("modal-icon").textContent = ev.icone;
-  document.getElementById("modal-id").textContent = `EVIDÊNCIA #${String(ev.id).padStart(3, "0")}`;
-  document.getElementById("modal-title").textContent = ev.titulo;
-  document.getElementById("modal-desc").textContent = ev.descricao;
-  document.getElementById("modal-concept").textContent = ev.conceito;
-
-  modal.classList.remove("hidden");
-  modalClose.focus();
-}
-
-function fecharModal() {
-  modal.classList.add("hidden");
-}
-
-function renderDepoimentos(container) {
-  const cards = depoimentos
-    .map((d) => {
-      const s = suspects.find((x) => x.id === d.suspeitoId);
-      const contradicao = d.contradicao
-        ? `<div class="testimony-contradiction"><strong>⚠ Contradição:</strong> ${d.contradicao}</div>`
-        : "";
-      return `
-        <article class="evidence-card testimony-card">
-          <div class="testimony-header">
-            <div class="testimony-avatar" style="background:${s.cor}">${s.foto}</div>
-            <div>
-              <h3 class="testimony-name font-display">${s.nome}</h3>
-              <p class="testimony-role">Depoimento formal</p>
-            </div>
-          </div>
-          <blockquote class="testimony-quote">"${d.texto}"</blockquote>
-          ${contradicao}
-        </article>
-      `;
-    })
-    .join("");
-
-  container.innerHTML = `
-    <section>
-      ${sectionHeader("Depoimentos", "Escute atentamente — mentiras deixam pistas.", "💬")}
-      <div class="testimony-list">${cards}</div>
-      <div class="concept-box">
-        <strong>Dica do perito:</strong> confronte cada afirmação com evidências e registros.
-        Uma contradição entre um álibi e um dado objetivo (log, digital, sangue) é um forte indício.
-      </div>
-    </section>
-  `;
-}
-
-function renderTimeline(container) {
-  const items = timeline
-    .map(
-      (t) => `
-      <li class="timeline-item">
-        <span class="timeline-dot"></span>
-        <div class="evidence-card timeline-card">
-          <div class="timeline-time font-display">${t.hora}</div>
-          <div class="timeline-desc">${t.descricao}</div>
-        </div>
-      </li>
-    `,
-    )
-    .join("");
-
-  container.innerHTML = `
-    <section>
-      ${sectionHeader("Linha do Tempo", "Sequência dos fatos registrados no dia do crime.", "⏱")}
-      <ol class="timeline">${items}</ol>
-    </section>
-  `;
-}
-
-function renderQuiz(container) {
-  const respondidas = Object.keys(state.quizAnswers).length;
-  const podeEnviar = respondidas === quiz.length;
-  const acertos = getAcertos();
-
-  const questions = quiz
-    .map((q, i) => {
-      const options = q.opcoes
-        .map((op, j) => {
-          const selected = state.quizAnswers[i] === j;
-          const isCorrect = state.quizSubmitted && j === q.correta;
-          const isWrong = state.quizSubmitted && selected && j !== q.correta;
-          const classes = ["quiz-option"];
-          if (isCorrect) classes.push("correct");
-          else if (isWrong) classes.push("wrong");
-          else if (selected) classes.push("selected");
-
-          return `
-            <button
-              class="${classes.join(" ")}"
-              data-q="${i}" data-opt="${j}"
-              ${state.quizSubmitted ? "disabled" : ""}
-            >
-              ${String.fromCharCode(65 + j)}. ${op}
-            </button>
-          `;
-        })
-        .join("");
-
-      const explanation = state.quizSubmitted
-        ? `<div class="quiz-explanation">${q.explicacao}</div>`
-        : "";
-
-      return `
-        <article class="evidence-card quiz-question">
-          <div class="quiz-header">
-            <span class="quiz-number">${String(i + 1).padStart(2, "0")}</span>
-            <h3 class="quiz-text">${q.pergunta}</h3>
-          </div>
-          <div class="quiz-options">${options}</div>
-          ${explanation}
-        </article>
-      `;
-    })
-    .join("");
-
-  const footer = !state.quizSubmitted
-    ? `
-      <button class="btn-primary" id="btn-enviar-quiz" ${!podeEnviar ? "disabled" : ""}>
-        ${podeEnviar ? "Enviar Respostas" : `Responda todas (${respondidas}/${quiz.length})`}
-      </button>
-    `
-    : `
-      <div class="evidence-card quiz-result">
-        <div class="concept-label">Resultado do Quiz</div>
-        <div class="quiz-result-score font-display">${acertos}/${quiz.length}</div>
-      </div>
-    `;
-
-  container.innerHTML = `
-    <section>
-      ${sectionHeader("Quiz Investigativo", `${respondidas}/${quiz.length} respondidas`, "❓")}
-      <div class="quiz-list">${questions}</div>
-      ${footer}
-    </section>
-  `;
-
-  container.querySelectorAll(".quiz-option").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      beep();
-      state.quizAnswers[Number(btn.dataset.q)] = Number(btn.dataset.opt);
-      renderDashboardContent();
-      updateDashboardStats();
-    });
-  });
-
-  const btnEnviar = document.getElementById("btn-enviar-quiz");
-  if (btnEnviar) {
-    btnEnviar.addEventListener("click", () => {
-      state.quizSubmitted = true;
-      renderDashboardContent();
-      updateDashboardStats();
-    });
-  }
-}
-
-function renderAcusar(container) {
-  const cards = suspects
-    .map(
-      (s) => `
-      <button class="evidence-card accuse-card ${state.acusado === s.id ? "selected" : ""}" data-id="${s.id}">
-        <div class="accuse-card-inner">
-          <div class="suspect-avatar" style="background:${s.cor}; width:3rem; height:3rem;">${s.foto}</div>
-          <div style="min-width:0;">
-            <div class="font-display text-primary" style="font-size:1rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.nome}</div>
-            <div class="text-muted" style="font-size:0.75rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${s.relacao}</div>
-          </div>
-        </div>
-      </button>
-    `,
-    )
-    .join("");
-
-  container.innerHTML = `
-    <section>
-      ${sectionHeader("Acusação Formal", "Aponte o(a) responsável pelo crime. Esta decisão é final.", "⚖️")}
-      <div class="accuse-grid">${cards}</div>
-      <button class="btn-danger" id="btn-finalizar" ${!state.acusado ? "disabled" : ""}>
-        ${state.acusado ? "Confirmar Acusação e Encerrar Caso" : "Selecione um suspeito"}
-      </button>
-    </section>
-  `;
-
-  container.querySelectorAll(".accuse-card").forEach((btn) => {
-    btn.addEventListener("click", () => {
-      beep();
-      state.acusado = btn.dataset.id;
-      renderDashboardContent();
-      updateDashboardStats();
-    });
-  });
-
-  document.getElementById("btn-finalizar").addEventListener("click", () => {
-    if (!state.acusado) return;
-    finalizarInvestigacao();
-  });
-}
-
-function finalizarInvestigacao() {
-  clearInterval(state.timerId);
-  state.timerId = null;
-
-  const entry = {
-    nome: state.nomeJogador.trim() || "Anônimo",
-    acertos: getAcertos(),
-    total: quiz.length,
-    tempo: state.elapsed,
-    nivel: nivelInvestigador(getProgresso()),
-    culpadoCorreto: state.acusado === CULPADO,
-    data: new Date().toLocaleDateString("pt-BR"),
-  };
-
-  const next = [...state.ranking, entry]
-    .sort((a, b) => {
-      if (a.culpadoCorreto !== b.culpadoCorreto) return a.culpadoCorreto ? -1 : 1;
-      if (b.acertos !== a.acertos) return b.acertos - a.acertos;
-      return a.tempo - b.tempo;
-    })
-    .slice(0, 10);
-
-  state.ranking = next;
-  saveRanking();
-
-  navigateTo("resultado");
-}
-
-function renderResultado() {
-  const acertos = getAcertos();
-  const total = quiz.length;
-  const progresso = getProgresso();
-  const nivel = nivelInvestigador(progresso);
-  const acertouCulpado = state.acusado === CULPADO;
-  const culpado = suspects.find((s) => s.id === CULPADO);
-
-  const rankingHtml = state.ranking.length
-    ? `
-      <article class="evidence-card result-section">
-        <h3 class="font-display">🏆 Ranking</h3>
-        <ol class="ranking-list" style="font-size:0.875rem;">
-          ${state.ranking
-            .map(
-              (r, i) => `
-            <li>
-              <span class="truncate">${i + 1}. ${r.nome} ${r.culpadoCorreto ? "✅" : "❌"}</span>
-              <span class="text-muted" style="flex-shrink:0; margin-left:0.5rem;">
-                ${r.acertos}/${r.total} · ${formatTempo(r.tempo)} · ${r.nivel}
-              </span>
-            </li>
-          `,
-            )
-            .join("")}
-        </ol>
-      </article>
-    `
-    : "";
-
-  app.innerHTML = `
-    <div class="result-screen">
-      <div class="police-tape py-2">⚠ CASO ENCERRADO · RELATÓRIO FINAL ⚠</div>
-      <div class="result-content">
-        <h1 class="result-title font-display">Relatório Final</h1>
-        <p class="result-subtitle">Análise completa do caso #007 · Lucas Andrade</p>
-
-        <div class="result-verdict ${acertouCulpado ? "success" : "error"}">
-          <div class="result-verdict-title font-display">
-            ${acertouCulpado ? "✅ Culpado identificado corretamente!" : "❌ Suspeito errado."}
-          </div>
-          <p style="font-size:0.9rem;">
-            O(a) verdadeiro(a) responsável era
-            <strong class="text-primary">${culpado.nome}</strong>.
-          </p>
-        </div>
-
-        <div class="result-stats">
-          <div class="evidence-card stat-card">
-            <div class="stat-label">Acertos</div>
-            <div class="stat-value font-display">${acertos}/${total}</div>
-          </div>
-          <div class="evidence-card stat-card">
-            <div class="stat-label">Investigação</div>
-            <div class="stat-value font-display">${progresso}%</div>
-          </div>
-          <div class="evidence-card stat-card">
-            <div class="stat-label">Tempo</div>
-            <div class="stat-value font-display">${formatTempo(state.elapsed)}</div>
-          </div>
-          <div class="evidence-card stat-card">
-            <div class="stat-label">Nível</div>
-            <div class="stat-value font-display small">${nivel}</div>
-          </div>
-        </div>
-
-        <article class="evidence-card result-section">
-          <h3 class="font-display">🔎 Como chegamos até aqui</h3>
-          <ul class="result-list">
-            <li>O sangue encontrado (A+) coincide com o tipo sanguíneo de <strong>Carla Oliveira</strong>, sugerindo que ela se feriu durante a luta.</li>
-            <li>O registro eletrônico do laboratório mostra o cartão de Carla acessando o local às 14h15 — contradizendo diretamente seu depoimento.</li>
-            <li>A última mensagem da vítima revela que iria confrontá-la sobre o desvio de reagentes: <strong>motivo</strong> claro.</li>
-            <li>A digital no frasco e a caligrafia do bilhete de ameaça reforçam a autoria.</li>
-          </ul>
-        </article>
-
-        <article class="evidence-card result-section">
-          <h3 class="font-display">📚 Conceitos aplicados</h3>
-          <div class="concepts-grid">
-            <div class="concept-item">
-              <strong>Tipagem sanguínea (ABO/Rh)</strong>
-              <span>Comparação entre sangue da cena e dos suspeitos.</span>
-            </div>
-            <div class="concept-item">
-              <strong>Impressões digitais</strong>
-              <span>Identificação individual por padrões papilares.</span>
-            </div>
-            <div class="concept-item">
-              <strong>DNA (simulado)</strong>
-              <span>Material biológico como prova de contato.</span>
-            </div>
-            <div class="concept-item">
-              <strong>Cadeia de custódia</strong>
-              <span>Preservação e rastreio das provas.</span>
-            </div>
-            <div class="concept-item">
-              <strong>Documentoscopia</strong>
-              <span>Análise grafotécnica do bilhete.</span>
-            </div>
-            <div class="concept-item">
-              <strong>Perícia digital</strong>
-              <span>Recuperação de mensagens e leitura de logs.</span>
-            </div>
-          </div>
-        </article>
-
-        ${rankingHtml}
-
-        <button class="btn-primary" id="btn-reiniciar">🔄 Novo Caso</button>
-      </div>
-    </div>
-  `;
-
-  document.getElementById("btn-reiniciar").addEventListener("click", () => {
-    reiniciar();
-  });
+function enviarVeredito() {
+  const campo = document.getElementById("acusado");
+  estado.codigoAcusado = campo ? campo.value.trim() : estado.codigoAcusado;
+  const alvo = SUSPEITOS.find((x) => x.codigo === estado.codigoAcusado);
+  if (!alvo) { estado.erroAcusacao = "Digite um código válido de suspeito (101 a 203)."; return render(); }
+  if (estado.provasMarcadas.length === 0) { estado.erroAcusacao = "Marque ao menos uma prova que sustente a acusação."; return render(); }
+
+  estado.erroAcusacao = "";
+  estado.acertou = alvo.codigo === CULPADO;
+  estado.tempoFinal = estado.inicio ? Math.floor((Date.now() - estado.inicio) / 1000) : 0;
+  beep(estado.acertou ? 880 : 220);
+
+  estado.ranking = estado.ranking.concat([{
+    equipe: estado.equipe || "Equipe sem nome",
+    acertou: estado.acertou,
+    quizAcertos: acertosQuiz(),
+    tempo: estado.tempoFinal,
+    nivel: nivel()
+  }]).sort((a, b) => (b.acertou - a.acertou) || (b.quizAcertos - a.quizAcertos) || (a.tempo - b.tempo)).slice(0, 10);
+  salvarRanking(estado.ranking);
+
+  estado.tela = "resultado";
+  render();
 }
 
 function reiniciar() {
-  state.screen = "intro";
-  state.started = false;
-  state.elapsed = 0;
-  state.visited = new Set();
-  state.quizAnswers = {};
-  state.quizSubmitted = false;
-  state.acusado = null;
-  if (state.timerId) clearInterval(state.timerId);
-  state.timerId = null;
+  estado.tela = "intro";
+  estado.inicio = null;
+  estado.tempo = 0;
+  estado.consultados = [];
+  estado.fichaAberta = null;
+  estado.codigo = "";
+  estado.erroCodigo = "";
+  estado.respostas = {};
+  estado.quizConcluido = false;
+  estado.codigoAcusado = "";
+  estado.provasMarcadas = [];
+  estado.erroAcusacao = "";
+  estado.acertou = false;
   render();
 }
 
-// ============================================
-// EVENTOS GLOBAIS
-// ============================================
+/* ---------------------- MODAL ---------------------- */
 
-modalBackdrop.addEventListener("click", fecharModal);
-modalClose.addEventListener("click", fecharModal);
+const modal = document.getElementById("modal");
+function abrirEvidencia(id) {
+  const ev = EVIDENCIAS.find((e) => e.id === id);
+  if (!ev || (ev.bloqueada && !estado.quizConcluido)) return;
+  document.getElementById("modal-icon").textContent = ev.icone;
+  document.getElementById("modal-title").textContent = ev.titulo;
+  document.getElementById("modal-desc").textContent = ev.descricao;
+  document.getElementById("modal-concept").textContent = ev.conceito;
+  modal.classList.remove("hidden");
+}
+function fecharModal() { modal.classList.add("hidden"); }
+document.getElementById("modal-close").addEventListener("click", fecharModal);
+document.getElementById("modal-backdrop").addEventListener("click", fecharModal);
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") fecharModal(); });
 
-document.addEventListener("keydown", (e) => {
-  if (e.key === "Escape" && !modal.classList.contains("hidden")) {
-    fecharModal();
+/* ---------------------- EVENTOS GLOBAIS ---------------------- */
+
+app.addEventListener("click", (e) => {
+  const alvo = e.target.closest("button");
+  if (!alvo) return;
+
+  if (alvo.dataset.tela) { estado.tela = alvo.dataset.tela; return render(); }
+  if (alvo.dataset.evidencia) return abrirEvidencia(alvo.dataset.evidencia);
+
+  if (alvo.dataset.tecla) {
+    const campo = document.getElementById("codigo");
+    const atual = campo ? campo.value : "";
+    estado.codigo = alvo.dataset.tecla === "⌫" ? atual.slice(0, -1) : (atual + alvo.dataset.tecla).slice(0, 3);
+    return render();
+  }
+
+  if (alvo.dataset.q !== undefined) {
+    const i = Number(alvo.dataset.q);
+    if (estado.respostas[i] !== undefined) return;
+    const opcao = Number(alvo.dataset.o);
+    estado.respostas[i] = opcao;
+    beep(opcao === QUIZ[i].correta ? 780 : 240);
+    return render();
+  }
+
+  if (alvo.dataset.prova) {
+    const id = alvo.dataset.prova;
+    const idx = estado.provasMarcadas.indexOf(id);
+    if (idx === -1) estado.provasMarcadas.push(id); else estado.provasMarcadas.splice(idx, 1);
+    const campo = document.getElementById("acusado");
+    if (campo) estado.codigoAcusado = campo.value;
+    return render();
+  }
+
+  switch (alvo.dataset.acao) {
+    case "iniciar": {
+      const campo = document.getElementById("equipe");
+      estado.equipe = campo ? campo.value.trim() : "";
+      estado.inicio = Date.now();
+      estado.tela = "roteiro";
+      return render();
+    }
+    case "consultar": return consultarCodigo();
+    case "concluir-quiz": estado.quizConcluido = true; beep(880); return render();
+    case "veredito": return enviarVeredito();
+    case "reiniciar": return reiniciar();
   }
 });
 
-// Inicialização
-loadRanking();
+// Enter confirma o código digitado
+app.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter") return;
+  if (e.target.id === "codigo") { e.preventDefault(); consultarCodigo(); }
+  if (e.target.id === "acusado") { e.preventDefault(); enviarVeredito(); }
+});
+
+/* ---------------------- INÍCIO ---------------------- */
 render();
