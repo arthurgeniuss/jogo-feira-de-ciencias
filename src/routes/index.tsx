@@ -1,1041 +1,757 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+
 import {
-  suspects,
-  evidencias,
+  CULPADO_CODIGO,
   depoimentos,
-  timeline,
+  evidencias,
+  passosDoJogo,
+  provasAcusacao,
   quiz,
-  CULPADO,
-  type SuspectId,
-} from "../lib/game-data";
+  suspects,
+  tabelaEstatura,
+  type Evidence,
+} from "@/lib/game-data";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "Projeto Evidência: Descubra o Culpado" },
+      { title: "O Mistério da Galeria de Arte | Projeto Evidência" },
       {
         name: "description",
         content:
-          "Jogo investigativo educacional de perícia criminal e biologia forense para feira de ciências. Analise evidências, interrogue suspeitos e descubra o culpado.",
+          "Jogo investigativo de perícia criminal para feira de ciências: analise digitais, tipagem sanguínea e pegadas para descobrir quem matou o dono da galeria.",
       },
-      { property: "og:title", content: "Projeto Evidência: Descubra o Culpado" },
+      { property: "og:title", content: "O Mistério da Galeria de Arte | Projeto Evidência" },
       {
         property: "og:description",
         content:
-          "Assuma o papel de perito forense e resolva um crime fictício em uma escola.",
+          "Assuma o papel de perito forense, consulte as fichas dos 6 suspeitos pelos códigos e aponte a autoria do crime.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
-    links: [
-      {
-        rel: "stylesheet",
-        href: "https://fonts.googleapis.com/css2?family=Special+Elite&family=Inter:wght@400;500;600;700;900&display=swap",
-      },
-    ],
   }),
-  component: Game,
+  component: Jogo,
 });
 
-type Screen =
+type Tela =
   | "intro"
-  | "suspeitos"
-  | "evidencias"
+  | "roteiro"
+  | "fichas"
   | "depoimentos"
-  | "timeline"
+  | "evidencias"
   | "quiz"
-  | "acusar"
+  | "estatura"
+  | "acusacao"
   | "resultado";
 
 interface RankingEntry {
-  nome: string;
-  acertos: number;
-  total: number;
+  equipe: string;
+  acertou: boolean;
+  quizAcertos: number;
+  provas: number;
   tempo: number;
   nivel: string;
-  culpadoCorreto: boolean;
-  data: string;
 }
 
-function formatTempo(s: number) {
-  const m = Math.floor(s / 60).toString().padStart(2, "0");
-  const sec = (s % 60).toString().padStart(2, "0");
-  return `${m}:${sec}`;
+const RANKING_KEY = "galeria-ranking-v1";
+
+function formatarTempo(segundos: number) {
+  const m = Math.floor(segundos / 60)
+    .toString()
+    .padStart(2, "0");
+  const s = (segundos % 60).toString().padStart(2, "0");
+  return `${m}:${s}`;
 }
 
-function nivelInvestigador(pct: number) {
-  if (pct <= 40) return "Investigador Iniciante";
-  if (pct <= 70) return "Investigador Experiente";
-  if (pct <= 90) return "Perito Forense";
-  return "Especialista Criminal";
-}
+function Jogo() {
+  const [tela, setTela] = useState<Tela>("intro");
+  const [equipe, setEquipe] = useState("");
+  const [inicio, setInicio] = useState<number | null>(null);
+  const [tempo, setTempo] = useState(0);
+  const [tempoFinal, setTempoFinal] = useState(0);
 
-function Game() {
-  const [screen, setScreen] = useState<Screen>("intro");
-  const [started, setStarted] = useState(false);
-  const [elapsed, setElapsed] = useState(0);
-  const [visited, setVisited] = useState<Set<Screen>>(new Set());
+  const [codigo, setCodigo] = useState("");
+  const [erroCodigo, setErroCodigo] = useState("");
+  const [consultados, setConsultados] = useState<string[]>([]);
+  const [fichaAberta, setFichaAberta] = useState<string | null>(null);
 
-  // Quiz state
-  const [quizAnswers, setQuizAnswers] = useState<Record<number, number>>({});
-  const [quizSubmitted, setQuizSubmitted] = useState(false);
+  const [respostas, setRespostas] = useState<Record<number, number>>({});
+  const [quizConcluido, setQuizConcluido] = useState(false);
 
-  // Acusação
-  const [acusado, setAcusado] = useState<SuspectId | null>(null);
-  const [finalizado, setFinalizado] = useState(false);
+  const [evidenciaAberta, setEvidenciaAberta] = useState<Evidence | null>(null);
 
-  // Nome jogador (para ranking)
-  const [nomeJogador, setNomeJogador] = useState("");
+  const [codigoAcusado, setCodigoAcusado] = useState("");
+  const [provasMarcadas, setProvasMarcadas] = useState<string[]>([]);
+  const [erroAcusacao, setErroAcusacao] = useState("");
+  const [acertou, setAcertou] = useState(false);
+
   const [ranking, setRanking] = useState<RankingEntry[]>([]);
 
-  // Timer
-  const startRef = useRef<number>(0);
-  useEffect(() => {
-    if (!started || finalizado) return;
-    startRef.current = Date.now() - elapsed * 1000;
-    const iv = setInterval(() => {
-      setElapsed(Math.floor((Date.now() - startRef.current) / 1000));
-    }, 1000);
-    return () => clearInterval(iv);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [started, finalizado]);
-
-  // Load ranking
   useEffect(() => {
     try {
-      const r = localStorage.getItem("evidencia_ranking");
-      if (r) setRanking(JSON.parse(r));
-    } catch {}
+      const raw = localStorage.getItem(RANKING_KEY);
+      if (raw) setRanking(JSON.parse(raw) as RankingEntry[]);
+    } catch {
+      /* ranking indisponível */
+    }
   }, []);
 
-  const acertos = useMemo(
-    () =>
-      quiz.reduce(
-        (acc, q, i) => (quizAnswers[i] === q.correta ? acc + 1 : acc),
-        0,
-      ),
-    [quizAnswers],
+  useEffect(() => {
+    if (inicio === null || tela === "resultado") return;
+    const id = window.setInterval(() => {
+      setTempo(Math.floor((Date.now() - inicio) / 1000));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [inicio, tela]);
+
+  const quizAcertos = useMemo(
+    () => quiz.reduce((total, q, i) => (respostas[i] === q.correta ? total + 1 : total), 0),
+    [respostas],
   );
-  const totalQuiz = quiz.length;
-  const pctQuiz = Math.round((acertos / totalQuiz) * 100);
 
-  // Percentual de investigação: baseia-se em telas visitadas + acertos + acusação correta
-  const pctInvestigacao = useMemo(() => {
-    const telasChave: Screen[] = [
-      "suspeitos",
-      "evidencias",
-      "depoimentos",
-      "timeline",
-      "quiz",
-    ];
-    const telasVisitadas = telasChave.filter((t) => visited.has(t)).length;
-    const pctTelas = (telasVisitadas / telasChave.length) * 30;
-    const pctAcertos = (acertos / totalQuiz) * 50;
-    const pctAcusacao = acusado === CULPADO ? 20 : 0;
-    return Math.round(pctTelas + pctAcertos + pctAcusacao);
-  }, [visited, acertos, acusado, totalQuiz]);
+  const provasCorretas = useMemo(
+    () =>
+      provasAcusacao.filter((p) => p.correta && provasMarcadas.includes(p.id)).length -
+      provasAcusacao.filter((p) => !p.correta && provasMarcadas.includes(p.id)).length,
+    [provasMarcadas],
+  );
 
-  const nivel = nivelInvestigador(pctInvestigacao);
-
-  function navigate(s: Screen) {
-    setScreen(s);
-    setVisited((v) => new Set(v).add(s));
-  }
+  const progresso = useMemo(() => {
+    const fichas = (consultados.length / suspects.length) * 40;
+    const q = (Object.keys(respostas).length / quiz.length) * 40;
+    const fim = tela === "resultado" ? 20 : 0;
+    return Math.min(100, Math.round(fichas + q + fim));
+  }, [consultados.length, respostas, tela]);
 
   function iniciar() {
-    setStarted(true);
-    setElapsed(0);
-    setVisited(new Set());
-    navigate("suspeitos");
+    setInicio(Date.now());
+    setTela("roteiro");
   }
 
-  function finalizarInvestigacao() {
-    if (!acusado) return;
-    setFinalizado(true);
-    setScreen("resultado");
-    // salvar ranking
-    const entry: RankingEntry = {
-      nome: nomeJogador.trim() || "Anônimo",
-      acertos,
-      total: totalQuiz,
-      tempo: elapsed,
+  function consultarCodigo() {
+    const encontrado = suspects.find((s) => s.codigo === codigo.trim());
+    if (!encontrado) {
+      setErroCodigo("Código não consta no cadastro de retidos. Confira a placa.");
+      setFichaAberta(null);
+      return;
+    }
+    setErroCodigo("");
+    setFichaAberta(encontrado.codigo);
+    setConsultados((atual) =>
+      atual.includes(encontrado.codigo) ? atual : [...atual, encontrado.codigo],
+    );
+    setCodigo("");
+  }
+
+  function responder(indice: number, opcao: number) {
+    if (respostas[indice] !== undefined) return;
+    setRespostas((atual) => ({ ...atual, [indice]: opcao }));
+  }
+
+  function finalizarQuiz() {
+    setQuizConcluido(true);
+  }
+
+  function enviarAcusacao() {
+    const alvo = suspects.find((s) => s.codigo === codigoAcusado.trim());
+    if (!alvo) {
+      setErroAcusacao("Digite um código válido de suspeito (101 a 203).");
+      return;
+    }
+    if (provasMarcadas.length === 0) {
+      setErroAcusacao("Marque ao menos uma prova que sustente a acusação.");
+      return;
+    }
+    setErroAcusacao("");
+    const certo = alvo.codigo === CULPADO_CODIGO;
+    setAcertou(certo);
+    const t = inicio ? Math.floor((Date.now() - inicio) / 1000) : 0;
+    setTempoFinal(t);
+
+    const nivel = definirNivel(certo, quizAcertos, provasCorretas);
+    const entrada: RankingEntry = {
+      equipe: equipe.trim() || "Equipe sem nome",
+      acertou: certo,
+      quizAcertos,
+      provas: Math.max(0, provasCorretas),
+      tempo: t,
       nivel,
-      culpadoCorreto: acusado === CULPADO,
-      data: new Date().toLocaleDateString("pt-BR"),
     };
-    const next = [...ranking, entry]
-      .sort((a, b) => {
-        if (a.culpadoCorreto !== b.culpadoCorreto) return a.culpadoCorreto ? -1 : 1;
-        if (b.acertos !== a.acertos) return b.acertos - a.acertos;
-        return a.tempo - b.tempo;
-      })
+    const novo = [...ranking, entrada]
+      .sort((a, b) => Number(b.acertou) - Number(a.acertou) || b.quizAcertos - a.quizAcertos || a.tempo - b.tempo)
       .slice(0, 10);
-    setRanking(next);
+    setRanking(novo);
     try {
-      localStorage.setItem("evidencia_ranking", JSON.stringify(next));
-    } catch {}
+      localStorage.setItem(RANKING_KEY, JSON.stringify(novo));
+    } catch {
+      /* sem persistência */
+    }
+    setTela("resultado");
   }
 
   function reiniciar() {
-    setScreen("intro");
-    setStarted(false);
-    setFinalizado(false);
-    setElapsed(0);
-    setVisited(new Set());
-    setQuizAnswers({});
-    setQuizSubmitted(false);
-    setAcusado(null);
+    setTela("intro");
+    setInicio(null);
+    setTempo(0);
+    setConsultados([]);
+    setFichaAberta(null);
+    setCodigo("");
+    setRespostas({});
+    setQuizConcluido(false);
+    setCodigoAcusado("");
+    setProvasMarcadas([]);
+    setAcertou(false);
   }
 
-  // Sound (beep opcional)
-  function beep() {
-    try {
-      const ctx = new (window.AudioContext ||
-        (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext)();
-      const o = ctx.createOscillator();
-      const g = ctx.createGain();
-      o.connect(g);
-      g.connect(ctx.destination);
-      o.frequency.value = 440;
-      g.gain.value = 0.05;
-      o.start();
-      setTimeout(() => {
-        o.stop();
-        ctx.close();
-      }, 80);
-    } catch {}
-  }
-
-  return (
-    <div className="min-h-screen bg-background text-foreground">
-      {screen === "intro" && !started ? (
-        <IntroScreen onStart={iniciar} nome={nomeJogador} setNome={setNomeJogador} ranking={ranking} />
-      ) : screen === "resultado" ? (
-        <ResultadoScreen
-          acertos={acertos}
-          total={totalQuiz}
-          pctInvestigacao={pctInvestigacao}
-          tempo={elapsed}
-          nivel={nivel}
-          acusado={acusado}
-          ranking={ranking}
-          onReiniciar={reiniciar}
-        />
-      ) : (
-        <Dashboard
-          screen={screen}
-          navigate={(s) => {
-            beep();
-            navigate(s);
-          }}
-          elapsed={elapsed}
-          progresso={pctInvestigacao}
-          quizAnswers={quizAnswers}
-          setQuizAnswers={setQuizAnswers}
-          quizSubmitted={quizSubmitted}
-          setQuizSubmitted={setQuizSubmitted}
-          acusado={acusado}
-          setAcusado={setAcusado}
-          onFinalizar={finalizarInvestigacao}
-          nomeJogador={nomeJogador}
-        />
-      )}
-    </div>
-  );
-}
-
-/* ============================ INTRO ============================ */
-function IntroScreen({
-  onStart,
-  nome,
-  setNome,
-  ranking,
-}: {
-  onStart: () => void;
-  nome: string;
-  setNome: (s: string) => void;
-  ranking: RankingEntry[];
-}) {
-  return (
-    <div className="min-h-screen relative overflow-hidden">
-      {/* background */}
-      <div
-        className="absolute inset-0 opacity-30"
-        style={{
-          background:
-            "radial-gradient(circle at 20% 20%, oklch(0.55 0.2 25 / 0.3), transparent 50%), radial-gradient(circle at 80% 80%, oklch(0.4 0.15 250 / 0.4), transparent 50%)",
-        }}
-      />
-      <div className="scanline absolute inset-0 pointer-events-none opacity-40" />
-
-      <div className="police-tape py-2 text-center text-xs sm:text-sm relative z-10">
-        ⚠ CENA DE CRIME · NÃO ULTRAPASSE · PERÍCIA EM ANDAMENTO ⚠
-      </div>
-
-      <div className="relative z-10 max-w-3xl mx-auto px-6 py-10 sm:py-16 animate-fade-in">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-14 h-14 rounded border-2 border-primary grid place-items-center text-primary font-display text-2xl">
-            PE
-          </div>
-          <div>
-            <div className="text-xs uppercase tracking-widest text-muted-foreground">
-              Departamento de Perícia Escolar
-            </div>
-            <div className="font-display text-lg text-primary">Arquivo Confidencial #007</div>
-          </div>
+  if (tela === "intro") {
+    return (
+      <main className="min-h-screen bg-background text-foreground">
+        <div className="police-tape py-2 text-center text-xs sm:text-sm">
+          ÁREA ISOLADA — PERÍCIA CRIMINAL EM ANDAMENTO
         </div>
-
-        <h1 className="font-display text-4xl sm:text-6xl leading-tight mb-2">
-          Projeto Evidência
-        </h1>
-        <h2 className="font-display text-xl sm:text-2xl text-primary mb-8">
-          Descubra o Culpado
-        </h2>
-
-        <div className="evidence-card rounded-lg p-6 mb-6">
-          <div className="flex items-center gap-2 mb-3">
-            <span className="text-xl">🔍</span>
-            <h3 className="font-display text-lg">Sobre o Caso</h3>
+        <div className="mx-auto flex max-w-3xl flex-col gap-6 px-5 py-12">
+          <p className="font-display text-sm tracking-widest text-primary">PROJETO EVIDÊNCIA</p>
+          <h1 className="text-4xl leading-tight sm:text-5xl">O Mistério da Galeria de Arte</h1>
+          <div className="evidence-card rounded-lg p-6 leading-relaxed">
+            <p>
+              Durante o coquetel VIP de inauguração de uma exposição no centro da cidade, o
+              proprietário da galeria foi encontrado morto nos fundos do estabelecimento. A arma
+              usada foi uma faca de caça deixada na cena.
+            </p>
+            <p className="mt-4">
+              A polícia isolou o perímetro com <strong>6 pessoas retidas</strong> — 3 mulheres e 3
+              homens, entre convidados e funcionários. Sua equipe de perícia foi chamada para
+              coletar as provas na sala, analisar os dados neste aplicativo e apontar a autoria.
+            </p>
           </div>
-          <p className="text-sm sm:text-base leading-relaxed text-muted-foreground">
-            O aluno <span className="text-foreground font-semibold">Lucas Andrade</span>{" "}
-            foi encontrado sem vida no laboratório da escola após o término das aulas.
-            Quatro suspeitos foram identificados. Como perito(a) forense, você deve
-            analisar evidências, ouvir depoimentos, cruzar a linha do tempo e apontar o
-            culpado. Utilize conceitos de{" "}
-            <span className="text-primary">Biologia Forense</span>,{" "}
-            <span className="text-primary">Perícia Criminal</span> e{" "}
-            <span className="text-primary">raciocínio lógico</span>.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8">
-          {[
-            { icone: "🩸", label: "Tipagem sanguínea" },
-            { icone: "🫆", label: "Impressões digitais" },
-            { icone: "🧬", label: "DNA (simulado)" },
-            { icone: "🔐", label: "Cadeia de custódia" },
-          ].map((c) => (
-            <div
-              key={c.label}
-              className="evidence-card rounded p-3 text-center text-xs"
-            >
-              <div className="text-2xl mb-1">{c.icone}</div>
-              <div className="text-muted-foreground">{c.label}</div>
-            </div>
-          ))}
-        </div>
-
-        <div className="mb-4">
-          <label className="block text-xs uppercase tracking-widest text-muted-foreground mb-2">
-            Nome do(a) Perito(a)
+          <label className="flex flex-col gap-2 text-sm">
+            <span className="text-muted-foreground">Nome da equipe de perícia</span>
+            <input
+              value={equipe}
+              onChange={(e) => setEquipe(e.target.value)}
+              placeholder="Ex.: Equipe Alfa"
+              className="rounded-md border border-border bg-input px-4 py-3 text-base outline-none focus:ring-2 focus:ring-ring"
+            />
           </label>
-          <input
-            type="text"
-            value={nome}
-            onChange={(e) => setNome(e.target.value)}
-            placeholder="Digite seu nome"
-            className="w-full bg-input border border-border rounded px-4 py-3 text-foreground focus:outline-none focus:ring-2 focus:ring-ring"
-          />
+          <button
+            onClick={iniciar}
+            className="rounded-md bg-primary px-6 py-4 text-lg font-bold text-primary-foreground transition hover:opacity-90"
+          >
+            Iniciar investigação
+          </button>
         </div>
+      </main>
+    );
+  }
 
-        <button
-          onClick={onStart}
-          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded uppercase tracking-widest hover:brightness-110 transition-all shadow-lg hover:scale-[1.01] active:scale-[0.99]"
-        >
-          Iniciar Investigação →
-        </button>
-
-        {ranking.length > 0 && (
-          <div className="mt-8 evidence-card rounded-lg p-4">
-            <h4 className="font-display text-sm text-primary mb-3">
-              🏆 Ranking Local (Top 5)
-            </h4>
-            <ol className="space-y-1 text-xs">
-              {ranking.slice(0, 5).map((r, i) => (
-                <li
-                  key={i}
-                  className="flex justify-between border-b border-border/50 pb-1"
-                >
-                  <span>
-                    {i + 1}. {r.nome} {r.culpadoCorreto ? "✅" : "❌"}
-                  </span>
-                  <span className="text-muted-foreground">
-                    {r.acertos}/{r.total} · {formatTempo(r.tempo)}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-}
-
-/* ============================ DASHBOARD ============================ */
-function Dashboard({
-  screen,
-  navigate,
-  elapsed,
-  progresso,
-  quizAnswers,
-  setQuizAnswers,
-  quizSubmitted,
-  setQuizSubmitted,
-  acusado,
-  setAcusado,
-  onFinalizar,
-  nomeJogador,
-}: {
-  screen: Screen;
-  navigate: (s: Screen) => void;
-  elapsed: number;
-  progresso: number;
-  quizAnswers: Record<number, number>;
-  setQuizAnswers: (u: Record<number, number>) => void;
-  quizSubmitted: boolean;
-  setQuizSubmitted: (b: boolean) => void;
-  acusado: SuspectId | null;
-  setAcusado: (s: SuspectId) => void;
-  onFinalizar: () => void;
-  nomeJogador: string;
-}) {
-  const menu: { id: Screen; label: string; icone: string }[] = [
-    { id: "suspeitos", label: "Suspeitos", icone: "👥" },
-    { id: "evidencias", label: "Evidências", icone: "🔬" },
-    { id: "depoimentos", label: "Depoimentos", icone: "💬" },
-    { id: "timeline", label: "Linha do Tempo", icone: "⏱" },
-    { id: "quiz", label: "Quiz", icone: "❓" },
-    { id: "acusar", label: "Acusar", icone: "⚖️" },
+  const menu: { id: Tela; rotulo: string; icone: string }[] = [
+    { id: "roteiro", rotulo: "Roteiro do perito", icone: "🧭" },
+    { id: "fichas", rotulo: "Fichas por código", icone: "🪪" },
+    { id: "depoimentos", rotulo: "Depoimentos", icone: "🗣️" },
+    { id: "evidencias", rotulo: "Laboratório", icone: "🔬" },
+    { id: "estatura", rotulo: "Tabela de estatura", icone: "📏" },
+    { id: "quiz", rotulo: "Quiz de perícia", icone: "🧠" },
+    { id: "acusacao", rotulo: "Acusação", icone: "⚖️" },
   ];
 
   return (
-    <div className="min-h-screen flex flex-col lg:flex-row">
-      {/* Sidebar */}
-      <aside className="lg:w-72 bg-sidebar border-b lg:border-b-0 lg:border-r border-sidebar-border">
-        <div className="p-4 border-b border-sidebar-border">
-          <div className="flex items-center gap-2">
-            <div className="w-10 h-10 rounded border-2 border-primary grid place-items-center text-primary font-display">
-              PE
+    <main className="min-h-screen bg-background text-foreground">
+      <div className="police-tape py-1.5 text-center text-[10px] sm:text-xs">
+        ÁREA ISOLADA — PERÍCIA CRIMINAL EM ANDAMENTO
+      </div>
+
+      <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 py-6 lg:flex-row">
+        <aside className="lg:w-64 lg:shrink-0">
+          <div className="evidence-card rounded-lg p-4">
+            <p className="font-display text-xs tracking-widest text-primary">CASO GALERIA</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              {equipe.trim() || "Equipe sem nome"}
+            </p>
+            <div className="mt-3 flex items-center justify-between text-sm">
+              <span className="text-muted-foreground">Tempo</span>
+              <span className="font-display text-lg text-evidence">{formatarTempo(tempo)}</span>
             </div>
-            <div className="min-w-0">
-              <div className="font-display text-sm text-primary truncate">
-                Projeto Evidência
+            <div className="mt-3">
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>Progresso</span>
+                <span>{progresso}%</span>
               </div>
-              <div className="text-[10px] uppercase tracking-widest text-muted-foreground truncate">
-                Perito(a): {nomeJogador || "Anônimo"}
+              <div className="mt-1 h-2 overflow-hidden rounded-full bg-muted">
+                <div className="h-full bg-primary transition-all" style={{ width: `${progresso}%` }} />
               </div>
             </div>
           </div>
 
-          <div className="mt-4 grid grid-cols-2 gap-2 text-xs">
-            <div className="bg-sidebar-accent rounded p-2">
-              <div className="text-[10px] uppercase text-muted-foreground">Tempo</div>
-              <div className="font-display text-primary">{formatTempo(elapsed)}</div>
-            </div>
-            <div className="bg-sidebar-accent rounded p-2">
-              <div className="text-[10px] uppercase text-muted-foreground">Progresso</div>
-              <div className="font-display text-primary">{progresso}%</div>
-            </div>
-          </div>
-          <div className="mt-2 h-1.5 bg-sidebar-accent rounded overflow-hidden">
-            <div
-              className="h-full bg-primary transition-all duration-500"
-              style={{ width: `${progresso}%` }}
-            />
-          </div>
-        </div>
-
-        <nav className="p-2 grid grid-cols-3 lg:grid-cols-1 gap-1">
-          {menu.map((m) => (
-            <button
-              key={m.id}
-              onClick={() => navigate(m.id)}
-              className={`text-left px-3 py-2.5 rounded text-sm flex items-center gap-2 transition-all ${
-                screen === m.id
-                  ? "bg-primary text-primary-foreground font-semibold"
-                  : "text-sidebar-foreground hover:bg-sidebar-accent"
-              }`}
-            >
-              <span className="text-base">{m.icone}</span>
-              <span className="truncate">{m.label}</span>
-            </button>
-          ))}
-        </nav>
-      </aside>
-
-      {/* Content */}
-      <main className="flex-1 min-w-0 relative">
-        <div className="police-tape py-1.5 text-center text-[10px] sm:text-xs">
-          ⚠ INVESTIGAÇÃO CONFIDENCIAL · ACESSO RESTRITO ⚠
-        </div>
-
-        <div key={screen} className="p-4 sm:p-8 animate-fade-in max-w-5xl mx-auto">
-          {screen === "suspeitos" && <TelaSuspeitos />}
-          {screen === "evidencias" && <TelaEvidencias />}
-          {screen === "depoimentos" && <TelaDepoimentos />}
-          {screen === "timeline" && <TelaTimeline />}
-          {screen === "quiz" && (
-            <TelaQuiz
-              answers={quizAnswers}
-              setAnswers={setQuizAnswers}
-              submitted={quizSubmitted}
-              setSubmitted={setQuizSubmitted}
-            />
-          )}
-          {screen === "acusar" && (
-            <TelaAcusar
-              acusado={acusado}
-              setAcusado={setAcusado}
-              onFinalizar={onFinalizar}
-            />
-          )}
-        </div>
-      </main>
-    </div>
-  );
-}
-
-/* ============================ SUSPEITOS ============================ */
-function TelaSuspeitos() {
-  return (
-    <section>
-      <SectionHeader
-        titulo="Suspeitos"
-        subtitulo="Perfis completos das quatro pessoas de interesse."
-        icone="👥"
-      />
-      <div className="grid gap-4 sm:grid-cols-2">
-        {suspects.map((s) => (
-          <article key={s.id} className="evidence-card rounded-lg p-5">
-            <div className="flex items-start gap-3 mb-4">
-              <div
-                className="w-14 h-14 rounded-full grid place-items-center font-display text-lg shrink-0"
-                style={{ background: s.cor, color: "oklch(0.16 0.02 250)" }}
+          <nav className="mt-4 grid grid-cols-2 gap-2 lg:grid-cols-1">
+            {menu.map((item) => (
+              <button
+                key={item.id}
+                onClick={() => setTela(item.id)}
+                className={`flex items-center gap-2 rounded-md border px-3 py-3 text-left text-sm transition ${
+                  tela === item.id
+                    ? "border-primary bg-secondary text-foreground"
+                    : "border-border bg-card text-muted-foreground hover:text-foreground"
+                }`}
               >
-                {s.foto}
-              </div>
-              <div className="min-w-0">
-                <h3 className="font-display text-lg text-primary truncate">{s.nome}</h3>
-                <p className="text-xs text-muted-foreground">
-                  {s.idade} anos · {s.relacao}
+                <span aria-hidden>{item.icone}</span>
+                {item.rotulo}
+              </button>
+            ))}
+          </nav>
+        </aside>
+
+        <section className="flex-1">
+          {tela === "roteiro" && (
+            <Bloco titulo="Roteiro do perito" subtitulo="Siga a ordem dos procedimentos na sala.">
+              <ol className="grid gap-3 sm:grid-cols-2">
+                {passosDoJogo.map((p, i) => (
+                  <li key={p.titulo} className="evidence-card rounded-lg p-4">
+                    <div className="flex items-center gap-2">
+                      <span className="text-2xl" aria-hidden>
+                        {p.icone}
+                      </span>
+                      <span className="font-display text-sm text-primary">PASSO {i + 1}</span>
+                    </div>
+                    <h3 className="mt-2 text-lg">{p.titulo}</h3>
+                    <p className="mt-1 text-sm text-muted-foreground">{p.texto}</p>
+                  </li>
+                ))}
+              </ol>
+            </Bloco>
+          )}
+
+          {tela === "fichas" && (
+            <Bloco
+              titulo="Fichas por código"
+              subtitulo="Digite o código da placa que o suspeito está segurando na sala."
+            >
+              <div className="evidence-card rounded-lg p-4">
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <input
+                    value={codigo}
+                    inputMode="numeric"
+                    onChange={(e) => setCodigo(e.target.value.replace(/\D/g, "").slice(0, 3))}
+                    onKeyDown={(e) => e.key === "Enter" && consultarCodigo()}
+                    placeholder="000"
+                    className="w-full rounded-md border border-border bg-input px-4 py-3 text-center font-display text-2xl tracking-[0.4em] outline-none focus:ring-2 focus:ring-ring sm:w-48"
+                  />
+                  <button
+                    onClick={consultarCodigo}
+                    className="rounded-md bg-primary px-6 py-3 font-bold text-primary-foreground"
+                  >
+                    Consultar ficha
+                  </button>
+                </div>
+                <div className="mt-3 grid grid-cols-5 gap-2 sm:max-w-xs">
+                  {["1", "2", "3", "0", "⌫"].map((t) => (
+                    <button
+                      key={t}
+                      onClick={() =>
+                        setCodigo((c) => (t === "⌫" ? c.slice(0, -1) : (c + t).slice(0, 3)))
+                      }
+                      className="rounded-md border border-border bg-secondary py-3 text-lg"
+                    >
+                      {t}
+                    </button>
+                  ))}
+                </div>
+                {erroCodigo && <p className="mt-3 text-sm text-destructive">{erroCodigo}</p>}
+                <p className="mt-3 text-xs text-muted-foreground">
+                  Fichas consultadas: {consultados.length}/{suspects.length}
+                  {consultados.length > 0 && ` — ${consultados.join(", ")}`}
                 </p>
               </div>
-            </div>
-            <dl className="space-y-2 text-sm">
-              <Field label="Motivo" value={s.motivo} />
-              <Field label="Álibi" value={s.alibi} />
-              <Field
-                label="Tipo Sanguíneo"
-                value={
-                  <span className="inline-block px-2 py-0.5 rounded bg-destructive/20 text-destructive font-bold">
-                    {s.tipoSanguineo}
-                  </span>
-                }
-              />
-            </dl>
-          </article>
-        ))}
-      </div>
-      <ConceitoBox>
-        <strong>Tipagem sanguínea:</strong> compare o tipo de cada suspeito com o
-        sangue encontrado na cena. O grupo ABO é determinado pela presença dos
-        antígenos A e B; o fator Rh (+/−) completa a classificação.
-      </ConceitoBox>
-    </section>
-  );
-}
 
-function Field({ label, value }: { label: string; value: React.ReactNode }) {
-  return (
-    <div className="grid grid-cols-[minmax(0,110px)_minmax(0,1fr)] gap-2">
-      <dt className="text-[10px] uppercase tracking-widest text-muted-foreground pt-0.5">
-        {label}
-      </dt>
-      <dd className="text-foreground">{value}</dd>
-    </div>
-  );
-}
+              {fichaAberta &&
+                (() => {
+                  const s = suspects.find((x) => x.codigo === fichaAberta)!;
+                  return (
+                    <article className="evidence-card mt-4 rounded-lg p-5">
+                      <div className="flex items-center gap-4">
+                        <div
+                          className="flex h-16 w-16 items-center justify-center rounded-full font-display text-xl text-background"
+                          style={{ background: s.cor }}
+                        >
+                          {s.iniciais}
+                        </div>
+                        <div>
+                          <p className="font-display text-xs tracking-widest text-primary">
+                            CÓDIGO {s.codigo}
+                          </p>
+                          <h3 className="text-2xl">{s.nome}</h3>
+                          <p className="text-sm text-muted-foreground">{s.papel}</p>
+                        </div>
+                      </div>
+                      <dl className="mt-4 grid gap-3 sm:grid-cols-2">
+                        <Dado rotulo="Gênero" valor={s.genero} />
+                        <Dado rotulo="Altura" valor={s.altura} />
+                        <Dado rotulo="Número do calçado" valor={String(s.calcado)} />
+                        <Dado rotulo="Tipo sanguíneo" valor={s.tipoSanguineo} />
+                        <Dado rotulo="Cabelo" valor={s.cabelo} />
+                      </dl>
+                    </article>
+                  );
+                })()}
+            </Bloco>
+          )}
 
-/* ============================ EVIDÊNCIAS ============================ */
-function TelaEvidencias() {
-  const [sel, setSel] = useState<number | null>(null);
-  const ev = evidencias.find((e) => e.id === sel);
-  return (
-    <section>
-      <SectionHeader
-        titulo="Evidências"
-        subtitulo="Materiais coletados na cena — clique para analisar."
-        icone="🔬"
-      />
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-        {evidencias.map((e) => (
-          <button
-            key={e.id}
-            onClick={() => setSel(e.id)}
-            className="evidence-card rounded-lg p-4 text-left hover:border-primary transition-all hover:scale-[1.02] active:scale-[0.98]"
-          >
-            <div className="flex items-center justify-between mb-2">
-              <span className="text-3xl">{e.icone}</span>
-              <span className="text-[10px] font-mono text-muted-foreground">
-                EV-{String(e.id).padStart(3, "0")}
-              </span>
-            </div>
-            <h3 className="font-display text-sm text-primary mb-1">{e.titulo}</h3>
-            <p className="text-xs text-muted-foreground line-clamp-2">
-              {e.descricaoCurta}
-            </p>
-          </button>
-        ))}
-      </div>
+          {tela === "depoimentos" && (
+            <Bloco
+              titulo="Relatório de depoimentos"
+              subtitulo="Cada depoimento é liberado depois que a ficha do suspeito é consultada."
+            >
+              <div className="grid gap-3">
+                {depoimentos.map((d) => {
+                  const s = suspects.find((x) => x.codigo === d.codigo)!;
+                  const liberado = consultados.includes(d.codigo);
+                  return (
+                    <article key={d.codigo} className="evidence-card rounded-lg p-5">
+                      <div className="flex items-center justify-between gap-3">
+                        <h3 className="text-lg">
+                          {liberado ? s.nome : "Depoimento reservado"}{" "}
+                          <span className="font-display text-sm text-primary">#{d.codigo}</span>
+                        </h3>
+                      </div>
+                      {liberado ? (
+                        <>
+                          <p className="mt-2 border-l-2 border-primary pl-3 text-sm italic text-muted-foreground">
+                            "{d.texto}"
+                          </p>
+                          {d.contradicao &&
+                            (quizConcluido ? (
+                              <p className="mt-3 rounded-md border border-destructive/50 bg-destructive/10 p-3 text-sm">
+                                <strong className="text-destructive">Contradição: </strong>
+                                {d.contradicao}
+                              </p>
+                            ) : (
+                              <p className="mt-3 text-xs text-warning">
+                                🔒 Há uma análise de contradição neste depoimento — conclua o quiz
+                                para liberar.
+                              </p>
+                            ))}
+                        </>
+                      ) : (
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          🔒 Consulte o código {d.codigo} na tela de fichas para liberar.
+                        </p>
+                      )}
+                    </article>
+                  );
+                })}
+              </div>
+            </Bloco>
+          )}
 
-      {ev && (
-        <div
-          className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 grid place-items-center p-4 animate-fade-in"
-          onClick={() => setSel(null)}
-        >
-          <div
-            className="evidence-card rounded-lg p-6 max-w-lg w-full max-h-[90vh] overflow-auto animate-scale-in"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-start justify-between mb-4">
-              <div className="flex items-center gap-3">
-                <span className="text-4xl">{ev.icone}</span>
-                <div>
-                  <div className="text-[10px] font-mono text-muted-foreground">
-                    EVIDÊNCIA #{String(ev.id).padStart(3, "0")}
-                  </div>
-                  <h3 className="font-display text-lg text-primary">{ev.titulo}</h3>
-                </div>
+          {tela === "evidencias" && (
+            <Bloco
+              titulo="Laboratório de evidências"
+              subtitulo="Toque em uma evidência para ver o laudo e o conceito forense."
+            >
+              <div className="grid gap-3 sm:grid-cols-2">
+                {evidencias.map((ev) => {
+                  const travada = ev.bloqueada && !quizConcluido;
+                  return (
+                    <button
+                      key={ev.id}
+                      onClick={() => !travada && setEvidenciaAberta(ev)}
+                      className={`evidence-card rounded-lg p-4 text-left transition ${
+                        travada ? "opacity-60" : "hover:border-primary"
+                      }`}
+                    >
+                      <span className="text-3xl" aria-hidden>
+                        {travada ? "🔒" : ev.icone}
+                      </span>
+                      <h3 className="mt-2 text-lg">{ev.titulo}</h3>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {travada ? "Liberado após o quiz de perícia." : ev.resumo}
+                      </p>
+                    </button>
+                  );
+                })}
+              </div>
+            </Bloco>
+          )}
+
+          {tela === "estatura" && (
+            <Bloco
+              titulo="Tabela de estatura por calçado"
+              subtitulo="O comprimento do pé equivale a cerca de 15% da altura da pessoa."
+            >
+              <div className="evidence-card overflow-hidden rounded-lg">
+                <table className="w-full text-left text-sm">
+                  <thead className="bg-secondary">
+                    <tr>
+                      <th className="px-4 py-3">Número do calçado</th>
+                      <th className="px-4 py-3">Estatura estimada</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {tabelaEstatura.map((l) => (
+                      <tr
+                        key={l.calcado}
+                        className={`border-t border-border ${l.calcado === 38 ? "bg-primary/10" : ""}`}
+                      >
+                        <td className="px-4 py-3">{l.calcado}</td>
+                        <td className="px-4 py-3">{l.estatura}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <p className="mt-3 text-sm text-muted-foreground">
+                A pegada em sangue medida na cena corresponde ao número 38 em modelo feminino.
+              </p>
+            </Bloco>
+          )}
+
+          {tela === "quiz" && (
+            <Bloco
+              titulo="Quiz de perícia"
+              subtitulo={`Acertos: ${quizAcertos}/${quiz.length} — concluir libera o laudo das digitais e o celular da vítima.`}
+            >
+              <div className="grid gap-4">
+                {quiz.map((q, i) => {
+                  const resposta = respostas[i];
+                  return (
+                    <article key={q.pergunta} className="evidence-card rounded-lg p-5">
+                      <p className="font-display text-xs tracking-widest text-primary">
+                        QUESTÃO {i + 1}
+                      </p>
+                      <h3 className="mt-1 text-lg">{q.pergunta}</h3>
+                      <div className="mt-3 grid gap-2">
+                        {q.opcoes.map((o, oi) => {
+                          const escolhida = resposta === oi;
+                          const certa = q.correta === oi;
+                          const revelar = resposta !== undefined;
+                          return (
+                            <button
+                              key={o}
+                              onClick={() => responder(i, oi)}
+                              className={`rounded-md border px-4 py-3 text-left text-sm transition ${
+                                revelar && certa
+                                  ? "border-success bg-success/15"
+                                  : escolhida
+                                    ? "border-destructive bg-destructive/15"
+                                    : "border-border bg-card hover:border-primary"
+                              }`}
+                            >
+                              {o}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      {resposta !== undefined && (
+                        <p className="mt-3 text-sm text-muted-foreground">{q.explicacao}</p>
+                      )}
+                    </article>
+                  );
+                })}
               </div>
               <button
-                onClick={() => setSel(null)}
-                className="text-muted-foreground hover:text-foreground text-xl"
+                onClick={finalizarQuiz}
+                disabled={Object.keys(respostas).length < quiz.length || quizConcluido}
+                className="mt-4 w-full rounded-md bg-primary px-6 py-4 text-lg font-bold text-primary-foreground disabled:opacity-40"
+              >
+                {quizConcluido
+                  ? "Laudos liberados ✔"
+                  : `Concluir quiz (${Object.keys(respostas).length}/${quiz.length})`}
+              </button>
+            </Bloco>
+          )}
+
+          {tela === "acusacao" && (
+            <Bloco
+              titulo="Tela de acusação"
+              subtitulo="Informe o código do suspeito e marque as provas que comprovam a autoria."
+            >
+              <div className="evidence-card rounded-lg p-5">
+                <label className="flex flex-col gap-2 text-sm">
+                  <span className="text-muted-foreground">Código do acusado</span>
+                  <input
+                    value={codigoAcusado}
+                    inputMode="numeric"
+                    onChange={(e) =>
+                      setCodigoAcusado(e.target.value.replace(/\D/g, "").slice(0, 3))
+                    }
+                    placeholder="000"
+                    className="w-full rounded-md border border-border bg-input px-4 py-3 text-center font-display text-2xl tracking-[0.4em] outline-none focus:ring-2 focus:ring-ring sm:w-48"
+                  />
+                </label>
+
+                <p className="mt-5 text-sm text-muted-foreground">Provas que sustentam a acusação</p>
+                <div className="mt-2 grid gap-2">
+                  {provasAcusacao.map((p) => {
+                    const marcada = provasMarcadas.includes(p.id);
+                    return (
+                      <button
+                        key={p.id}
+                        onClick={() =>
+                          setProvasMarcadas((atual) =>
+                            marcada ? atual.filter((x) => x !== p.id) : [...atual, p.id],
+                          )
+                        }
+                        className={`flex items-center gap-3 rounded-md border px-4 py-3 text-left text-sm transition ${
+                          marcada ? "border-primary bg-secondary" : "border-border bg-card"
+                        }`}
+                      >
+                        <span aria-hidden>{marcada ? "☑" : "☐"}</span>
+                        {p.rotulo}
+                      </button>
+                    );
+                  })}
+                </div>
+
+                {erroAcusacao && <p className="mt-3 text-sm text-destructive">{erroAcusacao}</p>}
+
+                <button
+                  onClick={enviarAcusacao}
+                  className="mt-4 w-full rounded-md bg-accent px-6 py-4 text-lg font-bold text-accent-foreground"
+                >
+                  Enviar veredito
+                </button>
+              </div>
+            </Bloco>
+          )}
+
+          {tela === "resultado" && (
+            <Bloco titulo="Laudo final" subtitulo="Resultado da investigação da sua equipe.">
+              <div
+                className={`evidence-card rounded-lg border-2 p-6 ${
+                  acertou ? "border-success" : "border-destructive"
+                }`}
+              >
+                <h3 className="text-2xl">
+                  {acertou ? "Caso solucionado! 🎉" : "Acusação incorreta"}
+                </h3>
+                <p className="mt-2 text-sm text-muted-foreground">
+                  A autora do crime é <strong className="text-foreground">Vitória Sampaio</strong>{" "}
+                  (código 102): calçado nº 38 e 1,70 m compatíveis com a pegada, sangue AB+ igual ao
+                  da lâmina, digital no cabo da faca e fio de cabelo loiro na arma.
+                </p>
+                <div className="mt-5 grid gap-3 sm:grid-cols-4">
+                  <Metrica rotulo="Quiz" valor={`${quizAcertos}/${quiz.length}`} />
+                  <Metrica
+                    rotulo="Aproveitamento"
+                    valor={`${Math.round((quizAcertos / quiz.length) * 100)}%`}
+                  />
+                  <Metrica rotulo="Tempo" valor={formatarTempo(tempoFinal)} />
+                  <Metrica
+                    rotulo="Nível"
+                    valor={definirNivel(acertou, quizAcertos, provasCorretas)}
+                  />
+                </div>
+              </div>
+
+              <div className="evidence-card mt-4 rounded-lg p-5">
+                <h3 className="text-lg">Ranking local</h3>
+                <ol className="mt-3 grid gap-2 text-sm">
+                  {ranking.map((r, i) => (
+                    <li
+                      key={`${r.equipe}-${i}`}
+                      className="flex flex-wrap items-center justify-between gap-2 rounded-md bg-secondary px-3 py-2"
+                    >
+                      <span>
+                        {i + 1}. {r.equipe} {r.acertou ? "✔" : "✘"}
+                      </span>
+                      <span className="text-muted-foreground">
+                        {r.quizAcertos}/{quiz.length} · {formatarTempo(r.tempo)} · {r.nivel}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              </div>
+
+              <button
+                onClick={reiniciar}
+                className="mt-4 w-full rounded-md bg-primary px-6 py-4 text-lg font-bold text-primary-foreground"
+              >
+                Nova investigação
+              </button>
+            </Bloco>
+          )}
+        </section>
+      </div>
+
+      {evidenciaAberta && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 p-4"
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setEvidenciaAberta(null)}
+        >
+          <div
+            className="evidence-card max-h-[85vh] w-full max-w-lg overflow-y-auto rounded-lg p-6"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center gap-3">
+                <span className="text-3xl" aria-hidden>
+                  {evidenciaAberta.icone}
+                </span>
+                <h3 className="text-xl">{evidenciaAberta.titulo}</h3>
+              </div>
+              <button
+                onClick={() => setEvidenciaAberta(null)}
                 aria-label="Fechar"
+                className="rounded-md border border-border px-3 py-1"
               >
                 ✕
               </button>
             </div>
-            <p className="text-sm text-foreground/90 leading-relaxed mb-4">
-              {ev.descricao}
-            </p>
-            <div className="border-l-2 border-primary pl-3 text-xs text-muted-foreground">
-              <div className="uppercase tracking-widest text-primary text-[10px] mb-1">
-                Conceito Forense
-              </div>
-              {ev.conceito}
+            <p className="mt-4 text-sm leading-relaxed">{evidenciaAberta.descricao}</p>
+            <div className="mt-4 rounded-md border border-evidence/40 bg-evidence/10 p-3">
+              <p className="font-display text-xs tracking-widest text-evidence">CONCEITO FORENSE</p>
+              <p className="mt-1 text-sm">{evidenciaAberta.conceito}</p>
             </div>
           </div>
         </div>
       )}
-    </section>
+    </main>
   );
 }
 
-/* ============================ DEPOIMENTOS ============================ */
-function TelaDepoimentos() {
-  return (
-    <section>
-      <SectionHeader
-        titulo="Depoimentos"
-        subtitulo="Escute atentamente — mentiras deixam pistas."
-        icone="💬"
-      />
-      <div className="space-y-4">
-        {depoimentos.map((d) => {
-          const s = suspects.find((x) => x.id === d.suspeitoId)!;
-          return (
-            <article key={d.suspeitoId} className="evidence-card rounded-lg p-5">
-              <div className="flex items-center gap-3 mb-3">
-                <div
-                  className="w-10 h-10 rounded-full grid place-items-center font-display text-sm shrink-0"
-                  style={{ background: s.cor, color: "oklch(0.16 0.02 250)" }}
-                >
-                  {s.foto}
-                </div>
-                <div>
-                  <h3 className="font-display text-primary">{s.nome}</h3>
-                  <p className="text-[10px] uppercase tracking-widest text-muted-foreground">
-                    Depoimento formal
-                  </p>
-                </div>
-              </div>
-              <blockquote className="border-l-2 border-primary/50 pl-4 text-sm italic text-foreground/90">
-                "{d.texto}"
-              </blockquote>
-            </article>
-          );
-        })}
-      </div>
-      <ConceitoBox>
-        <strong>Dica do perito:</strong> confronte cada afirmação com evidências e
-        registros. Uma contradição entre um álibi e um dado objetivo (log, digital,
-        sangue) é um forte indício.
-      </ConceitoBox>
-    </section>
-  );
+function definirNivel(acertou: boolean, quizAcertos: number, provas: number) {
+  if (!acertou) return "Estagiário";
+  const pontos = quizAcertos + Math.max(0, provas);
+  if (pontos >= 15) return "Perito-chefe";
+  if (pontos >= 11) return "Perito Criminal";
+  return "Assistente de perícia";
 }
 
-/* ============================ TIMELINE ============================ */
-function TelaTimeline() {
-  return (
-    <section>
-      <SectionHeader
-        titulo="Linha do Tempo"
-        subtitulo="Sequência dos fatos registrados no dia do crime."
-        icone="⏱"
-      />
-      <ol className="relative border-l-2 border-primary/40 pl-6 space-y-4">
-        {timeline.map((t, i) => (
-          <li key={i} className="relative">
-            <span className="absolute -left-[31px] top-1 w-4 h-4 rounded-full bg-primary ring-4 ring-background" />
-            <div className="evidence-card rounded p-3">
-              <div className="font-display text-primary">{t.hora}</div>
-              <div className="text-sm text-foreground/90">{t.descricao}</div>
-            </div>
-          </li>
-        ))}
-      </ol>
-    </section>
-  );
-}
-
-/* ============================ QUIZ ============================ */
-function TelaQuiz({
-  answers,
-  setAnswers,
-  submitted,
-  setSubmitted,
+function Bloco({
+  titulo,
+  subtitulo,
+  children,
 }: {
-  answers: Record<number, number>;
-  setAnswers: (u: Record<number, number>) => void;
-  submitted: boolean;
-  setSubmitted: (b: boolean) => void;
-}) {
-  const acertos = quiz.reduce(
-    (a, q, i) => (answers[i] === q.correta ? a + 1 : a),
-    0,
-  );
-  const respondidas = Object.keys(answers).length;
-  const podeEnviar = respondidas === quiz.length;
-
-  return (
-    <section>
-      <SectionHeader
-        titulo="Quiz Investigativo"
-        subtitulo={`${respondidas}/${quiz.length} respondidas`}
-        icone="❓"
-      />
-
-      <div className="space-y-4">
-        {quiz.map((q, i) => (
-          <article key={i} className="evidence-card rounded-lg p-4">
-            <div className="flex items-start gap-2 mb-3">
-              <span className="text-[10px] font-mono text-muted-foreground mt-1">
-                {String(i + 1).padStart(2, "0")}
-              </span>
-              <h3 className="text-sm font-semibold flex-1">{q.pergunta}</h3>
-            </div>
-            <div className="grid gap-2">
-              {q.opcoes.map((op, j) => {
-                const selected = answers[i] === j;
-                const correta = submitted && j === q.correta;
-                const errada = submitted && selected && j !== q.correta;
-                return (
-                  <button
-                    key={j}
-                    disabled={submitted}
-                    onClick={() => setAnswers({ ...answers, [i]: j })}
-                    className={`text-left text-sm px-3 py-2 rounded border transition-all ${
-                      correta
-                        ? "border-success bg-success/10 text-success"
-                        : errada
-                          ? "border-destructive bg-destructive/10 text-destructive"
-                          : selected
-                            ? "border-primary bg-primary/10"
-                            : "border-border hover:border-primary/50"
-                    }`}
-                  >
-                    {String.fromCharCode(65 + j)}. {op}
-                  </button>
-                );
-              })}
-            </div>
-            {submitted && (
-              <p className="mt-3 text-xs text-muted-foreground border-l-2 border-primary pl-3">
-                {q.explicacao}
-              </p>
-            )}
-          </article>
-        ))}
-      </div>
-
-      {!submitted ? (
-        <button
-          onClick={() => setSubmitted(true)}
-          disabled={!podeEnviar}
-          className="mt-6 w-full bg-primary text-primary-foreground font-bold py-3 rounded uppercase tracking-widest disabled:opacity-40 disabled:cursor-not-allowed hover:brightness-110"
-        >
-          {podeEnviar ? "Enviar Respostas" : `Responda todas (${respondidas}/${quiz.length})`}
-        </button>
-      ) : (
-        <div className="mt-6 evidence-card rounded p-4 text-center">
-          <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-            Resultado do Quiz
-          </div>
-          <div className="font-display text-3xl text-primary mt-1">
-            {acertos}/{quiz.length}
-          </div>
-        </div>
-      )}
-    </section>
-  );
-}
-
-/* ============================ ACUSAR ============================ */
-function TelaAcusar({
-  acusado,
-  setAcusado,
-  onFinalizar,
-}: {
-  acusado: SuspectId | null;
-  setAcusado: (s: SuspectId) => void;
-  onFinalizar: () => void;
+  titulo: string;
+  subtitulo: string;
+  children: React.ReactNode;
 }) {
   return (
-    <section>
-      <SectionHeader
-        titulo="Acusação Formal"
-        subtitulo="Aponte o(a) responsável pelo crime. Esta decisão é final."
-        icone="⚖️"
-      />
-      <div className="grid gap-3 sm:grid-cols-2">
-        {suspects.map((s) => (
-          <button
-            key={s.id}
-            onClick={() => setAcusado(s.id)}
-            className={`evidence-card rounded-lg p-4 text-left transition-all ${
-              acusado === s.id
-                ? "ring-2 ring-primary scale-[1.02]"
-                : "hover:border-primary/50"
-            }`}
-          >
-            <div className="flex items-center gap-3">
-              <div
-                className="w-12 h-12 rounded-full grid place-items-center font-display shrink-0"
-                style={{ background: s.cor, color: "oklch(0.16 0.02 250)" }}
-              >
-                {s.foto}
-              </div>
-              <div className="min-w-0">
-                <div className="font-display text-primary truncate">{s.nome}</div>
-                <div className="text-xs text-muted-foreground truncate">
-                  {s.relacao}
-                </div>
-              </div>
-            </div>
-          </button>
-        ))}
-      </div>
-
-      <button
-        onClick={onFinalizar}
-        disabled={!acusado}
-        className="mt-6 w-full bg-destructive text-destructive-foreground font-bold py-4 rounded uppercase tracking-widest disabled:opacity-40 hover:brightness-110 shadow-lg"
-      >
-        {acusado ? "Confirmar Acusação e Encerrar Caso" : "Selecione um suspeito"}
-      </button>
-    </section>
-  );
-}
-
-/* ============================ RESULTADO ============================ */
-function ResultadoScreen({
-  acertos,
-  total,
-  pctInvestigacao,
-  tempo,
-  nivel,
-  acusado,
-  ranking,
-  onReiniciar,
-}: {
-  acertos: number;
-  total: number;
-  pctInvestigacao: number;
-  tempo: number;
-  nivel: string;
-  acusado: SuspectId | null;
-  ranking: RankingEntry[];
-  onReiniciar: () => void;
-}) {
-  const acertouCulpado = acusado === CULPADO;
-  const culpado = suspects.find((s) => s.id === CULPADO)!;
-  return (
-    <div className="min-h-screen">
-      <div className="police-tape py-2 text-center text-xs">
-        ⚠ CASO ENCERRADO · RELATÓRIO FINAL ⚠
-      </div>
-      <div className="max-w-3xl mx-auto p-6 sm:p-10 animate-fade-in">
-        <h1 className="font-display text-3xl sm:text-5xl mb-2">Relatório Final</h1>
-        <p className="text-muted-foreground mb-8">
-          Análise completa do caso #007 · Lucas Andrade
-        </p>
-
-        <div
-          className={`rounded-lg p-6 mb-6 border-2 ${
-            acertouCulpado
-              ? "border-success bg-success/10"
-              : "border-destructive bg-destructive/10"
-          }`}
-        >
-          <div className="font-display text-lg mb-1">
-            {acertouCulpado ? "✅ Culpado identificado corretamente!" : "❌ Suspeito errado."}
-          </div>
-          <p className="text-sm text-foreground/90">
-            O(a) verdadeiro(a) responsável era{" "}
-            <span className="font-bold text-primary">{culpado.nome}</span>.
-          </p>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-          <Stat label="Acertos" value={`${acertos}/${total}`} />
-          <Stat label="Investigação" value={`${pctInvestigacao}%`} />
-          <Stat label="Tempo" value={formatTempo(tempo)} />
-          <Stat label="Nível" value={nivel} small />
-        </div>
-
-        <article className="evidence-card rounded-lg p-6 mb-4">
-          <h3 className="font-display text-primary mb-3">🔎 Como chegamos até aqui</h3>
-          <ul className="space-y-2 text-sm text-foreground/90 list-disc pl-5">
-            <li>
-              O sangue encontrado (A+) coincide com o tipo sanguíneo de{" "}
-              <b>Carla Oliveira</b>, sugerindo que ela se feriu durante a luta.
-            </li>
-            <li>
-              O registro eletrônico do laboratório mostra o cartão de Carla acessando
-              o local às 14h15 — contradizendo diretamente seu depoimento.
-            </li>
-            <li>
-              A última mensagem da vítima revela que iria confrontá-la sobre o desvio
-              de reagentes: <b>motivo</b> claro.
-            </li>
-            <li>
-              A digital no frasco e a caligrafia do bilhete de ameaça reforçam a
-              autoria.
-            </li>
-          </ul>
-        </article>
-
-        <article className="evidence-card rounded-lg p-6 mb-6">
-          <h3 className="font-display text-primary mb-3">📚 Conceitos aplicados</h3>
-          <div className="grid sm:grid-cols-2 gap-3 text-xs">
-            {[
-              ["Tipagem sanguínea (ABO/Rh)", "Comparação entre sangue da cena e dos suspeitos."],
-              ["Impressões digitais", "Identificação individual por padrões papilares."],
-              ["DNA (simulado)", "Material biológico como prova de contato."],
-              ["Cadeia de custódia", "Preservação e rastreio das provas."],
-              ["Documentoscopia", "Análise grafotécnica do bilhete."],
-              ["Perícia digital", "Recuperação de mensagens e leitura de logs."],
-            ].map(([t, d]) => (
-              <div key={t} className="border-l-2 border-primary/60 pl-3">
-                <div className="text-primary font-semibold">{t}</div>
-                <div className="text-muted-foreground">{d}</div>
-              </div>
-            ))}
-          </div>
-        </article>
-
-        {ranking.length > 0 && (
-          <article className="evidence-card rounded-lg p-6 mb-6">
-            <h3 className="font-display text-primary mb-3">🏆 Ranking</h3>
-            <ol className="text-sm space-y-1">
-              {ranking.map((r, i) => (
-                <li
-                  key={i}
-                  className="flex justify-between border-b border-border/50 py-1"
-                >
-                  <span className="truncate">
-                    {i + 1}. {r.nome} {r.culpadoCorreto ? "✅" : "❌"}
-                  </span>
-                  <span className="text-muted-foreground text-xs shrink-0 ml-2">
-                    {r.acertos}/{r.total} · {formatTempo(r.tempo)} · {r.nivel}
-                  </span>
-                </li>
-              ))}
-            </ol>
-          </article>
-        )}
-
-        <button
-          onClick={onReiniciar}
-          className="w-full bg-primary text-primary-foreground font-bold py-4 rounded uppercase tracking-widest hover:brightness-110"
-        >
-          🔄 Novo Caso
-        </button>
-      </div>
+    <div>
+      <h2 className="text-2xl">{titulo}</h2>
+      <p className="mb-4 mt-1 text-sm text-muted-foreground">{subtitulo}</p>
+      {children}
     </div>
   );
 }
 
-/* ============================ SHARED ============================ */
-function SectionHeader({
-  titulo,
-  subtitulo,
-  icone,
-}: {
-  titulo: string;
-  subtitulo: string;
-  icone: string;
-}) {
+function Dado({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <header className="mb-6">
-      <div className="flex items-center gap-3">
-        <span className="text-2xl sm:text-3xl">{icone}</span>
-        <div className="min-w-0">
-          <h2 className="font-display text-2xl sm:text-3xl text-primary truncate">
-            {titulo}
-          </h2>
-          <p className="text-xs sm:text-sm text-muted-foreground">{subtitulo}</p>
-        </div>
-      </div>
-      <div className="mt-3 h-px bg-gradient-to-r from-primary/60 to-transparent" />
-    </header>
+    <div className="rounded-md bg-secondary px-3 py-2">
+      <dt className="text-xs text-muted-foreground">{rotulo}</dt>
+      <dd className="text-base">{valor}</dd>
+    </div>
   );
 }
 
-function ConceitoBox({ children }: { children: React.ReactNode }) {
+function Metrica({ rotulo, valor }: { rotulo: string; valor: string }) {
   return (
-    <aside className="mt-6 border-l-4 border-primary bg-secondary/40 rounded p-4 text-sm text-foreground/90">
-      <div className="text-[10px] uppercase tracking-widest text-primary mb-1">
-        Conceito Forense
-      </div>
-      {children}
-    </aside>
-  );
-}
-
-function Stat({
-  label,
-  value,
-  small,
-}: {
-  label: string;
-  value: string;
-  small?: boolean;
-}) {
-  return (
-    <div className="evidence-card rounded p-3 text-center">
-      <div className="text-[10px] uppercase tracking-widest text-muted-foreground">
-        {label}
-      </div>
-      <div
-        className={`font-display text-primary mt-1 ${small ? "text-sm" : "text-2xl"}`}
-      >
-        {value}
-      </div>
+    <div className="rounded-md bg-secondary px-3 py-3 text-center">
+      <p className="text-xs text-muted-foreground">{rotulo}</p>
+      <p className="font-display text-lg">{valor}</p>
     </div>
   );
 }
