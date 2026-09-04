@@ -1,185 +1,247 @@
-// Dados estáticos do jogo "Projeto Evidência: Descubra o Culpado"
-// Culpado: Carla Oliveira (sangue A+, última a ver a vítima, contradição no depoimento)
-
-export type SuspectId = "ana" | "pedro" | "carla" | "rafael";
+// Dados estáticos do jogo "Projeto Evidência: O Mistério da Galeria de Arte"
+// Culpada: Vitória Sampaio (código 102) — calçado 38 / 1,70m, sangue AB+ na lâmina,
+// digital na faca e fio de cabelo loiro.
 
 export interface Suspect {
-  id: SuspectId;
+  codigo: string;
   nome: string;
-  idade: number;
-  relacao: string;
-  motivo: string;
-  alibi: string;
+  genero: "Feminino" | "Masculino";
+  papel: string;
+  altura: string;
+  alturaM: number;
+  calcado: number;
   tipoSanguineo: string;
-  foto: string; // emoji/inicial
+  cabelo: string;
+  iniciais: string;
   cor: string;
 }
 
 export const suspects: Suspect[] = [
   {
-    id: "ana",
-    nome: "Ana Ferreira",
-    idade: 17,
-    relacao: "Colega de turma da vítima",
-    motivo: "Discussão recente com Lucas sobre um trabalho em grupo.",
-    alibi: "Afirma estar na biblioteca com duas colegas entre 14h e 15h.",
+    codigo: "101",
+    nome: "Helena Duarte",
+    genero: "Feminino",
+    papel: "Curadora da exposição",
+    altura: "1,62 m",
+    alturaM: 1.62,
+    calcado: 36,
     tipoSanguineo: "O+",
-    foto: "AF",
+    cabelo: "Preto, liso",
+    iniciais: "HD",
     cor: "oklch(0.65 0.18 30)",
   },
   {
-    id: "pedro",
-    nome: "Pedro Santos",
-    idade: 18,
-    relacao: "Amigo próximo da vítima",
-    motivo: "Ciúmes de uma bolsa de estudos concedida a Lucas.",
-    alibi: "Diz ter saído da escola às 14h05 para ir ao dentista.",
-    tipoSanguineo: "B+",
-    foto: "PS",
-    cor: "oklch(0.6 0.18 250)",
+    codigo: "102",
+    nome: "Vitória Sampaio",
+    genero: "Feminino",
+    papel: "Sócia investidora da galeria",
+    altura: "1,70 m",
+    alturaM: 1.7,
+    calcado: 38,
+    tipoSanguineo: "AB+",
+    cabelo: "Loiro, ondulado",
+    iniciais: "VS",
+    cor: "oklch(0.78 0.15 85)",
   },
   {
-    id: "carla",
-    nome: "Carla Oliveira",
-    idade: 24,
-    relacao: "Monitora do laboratório",
-    motivo: "Lucas descobriu que ela desviava reagentes da escola.",
-    alibi: "Afirma não ter entrado no laboratório após 14h.",
-    tipoSanguineo: "A+",
-    foto: "CO",
+    codigo: "103",
+    nome: "Marina Rocha",
+    genero: "Feminino",
+    papel: "Artista convidada",
+    altura: "1,58 m",
+    alturaM: 1.58,
+    calcado: 35,
+    tipoSanguineo: "A-",
+    cabelo: "Castanho, cacheado",
+    iniciais: "MR",
     cor: "oklch(0.65 0.15 145)",
   },
   {
-    id: "rafael",
-    nome: "Rafael Costa",
-    idade: 20,
-    relacao: "Ex-aluno da escola",
-    motivo: "Ressentimento após ter sido reprovado e denunciado por Lucas.",
-    alibi: "Estava no pátio esperando um amigo, viu movimentação no corredor.",
+    codigo: "201",
+    nome: "Otávio Bran",
+    genero: "Masculino",
+    papel: "Segurança do evento",
+    altura: "1,80 m",
+    alturaM: 1.8,
+    calcado: 41,
+    tipoSanguineo: "B+",
+    cabelo: "Preto, curto",
+    iniciais: "OB",
+    cor: "oklch(0.6 0.18 250)",
+  },
+  {
+    codigo: "202",
+    nome: "Sérgio Almeida",
+    genero: "Masculino",
+    papel: "Crítico de arte convidado",
+    altura: "1,85 m",
+    alturaM: 1.85,
+    calcado: 42,
     tipoSanguineo: "O-",
-    foto: "RC",
+    cabelo: "Grisalho",
+    iniciais: "SA",
+    cor: "oklch(0.7 0.02 250)",
+  },
+  {
+    codigo: "203",
+    nome: "Diego Farias",
+    genero: "Masculino",
+    papel: "Garçom do coquetel",
+    altura: "1,75 m",
+    alturaM: 1.75,
+    calcado: 40,
+    tipoSanguineo: "A+",
+    cabelo: "Castanho, curto",
+    iniciais: "DF",
     cor: "oklch(0.65 0.18 320)",
   },
 ];
 
-export interface Evidence {
-  id: number;
-  titulo: string;
-  icone: string;
-  descricaoCurta: string;
-  descricao: string;
-  conceito: string;
-}
-
-export const evidencias: Evidence[] = [
-  {
-    id: 1,
-    titulo: "Fotografia da cena do crime",
-    icone: "📷",
-    descricaoCurta: "Registro fotográfico do laboratório.",
-    descricao:
-      "A vítima foi encontrada caída próxima à bancada central. Uma cadeira tombada e um frasco de reagente quebrado indicam luta corporal. A porta de acesso restrito estava destrancada — apenas monitores possuem chave.",
-    conceito:
-      "Cadeia de custódia: toda cena deve ser fotografada antes que qualquer objeto seja movido, preservando a integridade da prova.",
-  },
-  {
-    id: 2,
-    titulo: "Mancha de sangue A+",
-    icone: "🩸",
-    descricaoCurta: "Sangue encontrado sobre a bancada.",
-    descricao:
-      "Análise laboratorial confirmou tipagem sanguínea A+. A vítima possui sangue tipo O-. Portanto, o sangue pertence ao agressor, que provavelmente se feriu durante a luta.",
-    conceito:
-      "Tipagem sanguínea ABO: os antígenos A e B nas hemácias determinam o tipo. A+ significa antígeno A presente + fator Rh positivo.",
-  },
-  {
-    id: 3,
-    titulo: "Impressão digital em frasco",
-    icone: "🫆",
-    descricaoCurta: "Digital latente revelada com pó preto.",
-    descricao:
-      "Impressão digital do tipo presilha interna foi coletada em um frasco de ácido. O padrão coincide com a ficha biométrica de uma das monitoras cadastradas na escola.",
-    conceito:
-      "Impressões digitais são únicas e imutáveis. Os três padrões principais são arco, presilha e verticilo.",
-  },
-  {
-    id: 4,
-    titulo: "Bilhete rasgado com ameaça",
-    icone: "📝",
-    descricaoCurta: "\"Se você contar, eu acabo com você.\"",
-    descricao:
-      "Fragmentos de papel foram remontados. A caligrafia foi comparada com amostras de escrita dos suspeitos, apresentando forte compatibilidade com uma escrita feminina de traços firmes.",
-    conceito:
-      "Documentoscopia: perícia grafotécnica compara pressão, inclinação e formato das letras para identificar autoria.",
-  },
-  {
-    id: 5,
-    titulo: "Registro eletrônico de acesso",
-    icone: "🔐",
-    descricaoCurta: "Log da fechadura eletrônica do laboratório.",
-    descricao:
-      "O sistema registrou entrada às 14h15 utilizando o cartão da monitora Carla Oliveira — apesar de seu depoimento afirmar que ela não entrou no laboratório naquele horário.",
-    conceito:
-      "Provas digitais também compõem a cadeia de custódia. Logs eletrônicos são admissíveis quando íntegros e datados.",
-  },
-  {
-    id: 6,
-    titulo: "Mensagens do celular da vítima",
-    icone: "📱",
-    descricaoCurta: "Última conversa recuperada.",
-    descricao:
-      "Última mensagem enviada por Lucas às 13h58: \"Vou falar com a Carla agora, ela precisa parar com isso ou vou contar pra diretora.\" Nenhuma resposta foi registrada.",
-    conceito:
-      "Perícia digital: mesmo mensagens apagadas podem ser recuperadas via análise forense de memória flash.",
-  },
-];
+export const CULPADO_CODIGO = "102";
 
 export interface Depoimento {
-  suspeitoId: SuspectId;
+  codigo: string;
   texto: string;
   contradicao?: string;
 }
 
 export const depoimentos: Depoimento[] = [
   {
-    suspeitoId: "ana",
+    codigo: "101",
     texto:
-      "Sim, discuti com o Lucas semana passada, mas foi bobagem. Naquela tarde eu estava na biblioteca com a Júlia e a Marina revisando o trabalho de História. Saímos de lá só depois das 15h, quando começou a confusão.",
+      "Passei a noite inteira recebendo os convidados na entrada principal. Ouvi um barulho vindo dos fundos por volta das 22h10, mas achei que fosse o pessoal do bufê descarregando caixas. Só entendi o que tinha acontecido quando a polícia chegou.",
   },
   {
-    suspeitoId: "pedro",
+    codigo: "102",
     texto:
-      "Fui embora cedo, tinha consulta no dentista às 14h30. Nem passei perto do laboratório. Lucas era meu amigo, jamais faria mal a ele — só fiquei chateado com a bolsa, mas conversamos.",
-  },
-  {
-    suspeitoId: "carla",
-    texto:
-      "Fui a última a ver o Lucas, mas foi só um oi no corredor por volta das 13h50. Depois disso eu fui para a sala dos professores e não voltei ao laboratório. Não tenho ideia do que aconteceu.",
+      "Discuti com ele sim, sobre dinheiro — todo mundo viu. Mas saí para o pátio tomar ar e não cheguei nem perto da área de serviço. Nunca toquei naquela faca. Este corte na minha mão foi de uma taça que quebrou na cozinha.",
     contradicao:
-      "O registro eletrônico mostra seu cartão acessando o laboratório às 14h15 — e sua tipagem sanguínea coincide com o sangue encontrado na bancada.",
+      "O sangue da lâmina é AB+, mesmo tipo dela; a digital da faca coincide com sua ficha; e a pegada em sangue é de calçado feminino nº 38, com estatura estimada de 1,70 m — exatamente seus dados.",
   },
   {
-    suspeitoId: "rafael",
+    codigo: "103",
     texto:
-      "Eu estava no pátio esperando um amigo. Vi gente entrando e saindo do bloco do laboratório, mas não subi. Sim, o Lucas me denunciou uma vez, mas isso já ficou pra trás.",
+      "Estava montando a última tela na sala 2 com dois assistentes. Vi a Vitória discutindo com o proprietário perto do corredor de serviço, mas não escutei o que diziam. Depois disso fiquei na sala até os gritos.",
+  },
+  {
+    codigo: "201",
+    texto:
+      "Sou o segurança. Cheguei a agarrar o proprietário pelo braço mais cedo, porque ele estava alterado e quis expulsar um convidado. Foi um empurra-empurra, nada além disso. Depois voltei para o monitor das câmeras.",
+    contradicao:
+      "Ele admite contato físico com a vítima, mas a única pegada em sangue na cena é de um modelo feminino nº 38 — incompatível com seu calçado nº 41.",
+  },
+  {
+    codigo: "202",
+    texto:
+      "Sou crítico, vim escrever sobre a mostra. Falei com o proprietário no início da noite sobre o catálogo e nada mais. Passei o resto do tempo no salão principal, sempre acompanhado.",
+  },
+  {
+    codigo: "203",
+    texto:
+      "Circulei a noite toda servindo canapés. Entrei na área de serviço várias vezes para repor as bandejas, é o meu trabalho. Na última vez, por volta das 22h20, a porta dos fundos estava trancada por dentro, o que era estranho.",
   },
 ];
 
-export interface TimelineEvent {
-  hora: string;
+export interface Evidence {
+  id: string;
+  titulo: string;
+  icone: string;
+  resumo: string;
   descricao: string;
+  conceito: string;
+  bloqueada?: boolean;
 }
 
-export const timeline: TimelineEvent[] = [
-  { hora: "13:58", descricao: "Lucas envia mensagem dizendo que iria confrontar Carla." },
-  { hora: "14:00", descricao: "Vítima entra no laboratório." },
-  { hora: "14:05", descricao: "Pedro Santos é registrado saindo da escola." },
-  { hora: "14:10", descricao: "Ana Ferreira é vista no corredor da biblioteca." },
-  { hora: "14:15", descricao: "Cartão de Carla Oliveira acessa o laboratório." },
-  { hora: "14:20", descricao: "Testemunha relata gritos e discussão vindos do laboratório." },
-  { hora: "14:30", descricao: "Horário estimado do crime (perícia)." },
-  { hora: "14:45", descricao: "Rafael Costa é visto atravessando o pátio." },
-  { hora: "15:00", descricao: "Corpo é encontrado por funcionário da limpeza." },
+export const evidencias: Evidence[] = [
+  {
+    id: "faca",
+    titulo: "Faca de caça (arma do crime)",
+    icone: "🔪",
+    resumo: "Encontrada ao lado do corpo, com sangue seco na lâmina.",
+    descricao:
+      "Faca de caça de lâmina fixa, 18 cm, abandonada a 40 cm do corpo. A lâmina apresenta sangue de duas origens e o cabo conserva impressões digitais latentes reveladas com pó preto.",
+    conceito:
+      "A arma deve ser fotografada e etiquetada antes de ser movida. Todo deslocamento é registrado na cadeia de custódia.",
+  },
+  {
+    id: "pegada",
+    titulo: "Pegada em sangue",
+    icone: "👠",
+    resumo: "Marca de calçado feminino modelo nº 38.",
+    descricao:
+      "Pegada parcial em sangue no piso da área de serviço. Solado de modelo feminino, comprimento compatível com numeração 38. Pela tabela de proporção pé/estatura, a autora tem aproximadamente 1,70 m.",
+    conceito:
+      "O comprimento do pé equivale, em média, a 15% da estatura. Por isso a pegada permite estimar a altura de quem a deixou.",
+  },
+  {
+    id: "tipagem",
+    titulo: "Bancada de tipagem sanguínea",
+    icone: "🩸",
+    resumo: "Vítima O-; sangue da lâmina AB+.",
+    descricao:
+      "Testes com soros Anti-A, Anti-B e Anti-D: a amostra da vítima não aglutinou com Anti-A nem Anti-B e não reagiu ao Anti-D (O-). A amostra da lâmina aglutinou com Anti-A, Anti-B e Anti-D (AB+). Logo, parte do sangue é do agressor, ferido durante a luta.",
+    conceito:
+      "Sistema ABO e fator Rh: a aglutinação indica quais antígenos existem nas hemácias.",
+  },
+  {
+    id: "cabelo",
+    titulo: "Fio de cabelo na lâmina",
+    icone: "🧬",
+    resumo: "Fio loiro, ondulado, com bulbo preservado.",
+    descricao:
+      "Um fio loiro ondulado ficou preso entre o cabo e a lâmina. O bulbo está preservado, o que permitiria exame de DNA. A vítima tinha cabelo castanho e curto.",
+    conceito:
+      "Tricologia forense: cor, forma da secção e presença de bulbo ajudam a vincular uma pessoa à cena.",
+  },
+  {
+    id: "cartoes",
+    titulo: "Cartões de referência de digitais",
+    icone: "🫆",
+    resumo: "Padrões arco, presilha e verticilo para comparação.",
+    descricao:
+      "Fichas datiloscópicas dos seis retidos, para comparação visual com a digital latente coletada no cabo da faca.",
+    conceito:
+      "Impressões digitais são únicas e imutáveis. A identificação exige coincidência de pontos característicos.",
+  },
+  {
+    id: "laudo",
+    titulo: "Laudo datiloscópico da faca",
+    icone: "📄",
+    resumo: "Resultado completo da comparação das digitais.",
+    descricao:
+      "A digital latente do cabo apresenta padrão verticilo com 14 pontos característicos coincidentes com a ficha da suspeita de código 102. As demais fichas foram excluídas.",
+    conceito:
+      "Doze pontos coincidentes já são considerados suficientes para identificação positiva no Brasil.",
+    bloqueada: true,
+  },
+  {
+    id: "celular",
+    titulo: "Celular da vítima",
+    icone: "📱",
+    resumo: "Mensagens recuperadas da noite do crime.",
+    descricao:
+      "Às 21h47 a vítima escreveu: \"A Vitória vai ter que devolver o dinheiro da galeria hoje ou eu levo tudo pro advogado amanhã.\" Às 22h02 recebeu: \"Me encontra nos fundos, vamos resolver isso agora.\"",
+    conceito:
+      "Perícia digital: mensagens, metadados e horários integram a prova e também exigem cadeia de custódia.",
+    bloqueada: true,
+  },
+];
+
+export interface EstaturaRef {
+  calcado: number;
+  estatura: string;
+}
+
+export const tabelaEstatura: EstaturaRef[] = [
+  { calcado: 34, estatura: "1,52 m – 1,56 m" },
+  { calcado: 35, estatura: "1,56 m – 1,60 m" },
+  { calcado: 36, estatura: "1,60 m – 1,65 m" },
+  { calcado: 37, estatura: "1,65 m – 1,68 m" },
+  { calcado: 38, estatura: "1,68 m – 1,72 m" },
+  { calcado: 39, estatura: "1,72 m – 1,76 m" },
+  { calcado: 40, estatura: "1,74 m – 1,78 m" },
+  { calcado: 41, estatura: "1,78 m – 1,82 m" },
+  { calcado: 42, estatura: "1,82 m – 1,87 m" },
 ];
 
 export interface QuizQuestion {
@@ -191,41 +253,69 @@ export interface QuizQuestion {
 
 export const quiz: QuizQuestion[] = [
   {
-    pergunta: "Qual foi o tipo sanguíneo encontrado na bancada do laboratório?",
-    opcoes: ["O-", "A+", "B+", "AB-"],
-    correta: 1,
-    explicacao: "Análise laboratorial identificou sangue A+, incompatível com o da vítima (O-).",
-  },
-  {
-    pergunta: "Quem foi a última pessoa a ver Lucas com vida, segundo os depoimentos?",
-    opcoes: ["Ana Ferreira", "Pedro Santos", "Carla Oliveira", "Rafael Costa"],
-    correta: 2,
-    explicacao: "Carla admite ter falado com Lucas no corredor pouco antes das 14h.",
-  },
-  {
-    pergunta: "Qual evidência contradiz diretamente o depoimento de Carla?",
+    pergunta: "Qual é o primeiro procedimento ao chegar a uma cena de crime?",
     opcoes: [
-      "Bilhete rasgado",
-      "Registro eletrônico de acesso",
-      "Mensagens do celular",
-      "Fotografia da cena",
+      "Recolher a arma para o laboratório",
+      "Isolar o perímetro e registrar a cena por fotografia",
+      "Interrogar os suspeitos",
+      "Cobrir o corpo",
     ],
     correta: 1,
-    explicacao: "O log da fechadura mostra o cartão dela acessando o laboratório às 14h15.",
+    explicacao: "Isolar e fotografar preserva a cena antes de qualquer objeto ser movido.",
   },
   {
-    pergunta: "O que define a cadeia de custódia?",
+    pergunta: "O que é cadeia de custódia?",
     opcoes: [
-      "A ordem em que os suspeitos são interrogados",
-      "O caminho documentado de cada evidência desde a coleta até o julgamento",
+      "A ordem dos interrogatórios",
+      "O registro documentado do caminho de cada prova, da coleta ao julgamento",
       "A hierarquia dos peritos",
       "O tempo entre o crime e a autópsia",
     ],
     correta: 1,
-    explicacao: "Cadeia de custódia é o rastreio íntegro e documentado da prova.",
+    explicacao: "Sem cadeia de custódia íntegra, a prova pode ser anulada em juízo.",
   },
   {
-    pergunta: "Impressões digitais são classificadas em três padrões principais. Quais?",
+    pergunta: "Por que peritos usam luvas, máscara e jaleco na cena?",
+    opcoes: [
+      "Apenas por uniforme",
+      "Para evitar contaminação da cena e proteger o próprio perito",
+      "Para não sujar a roupa",
+      "Exigência do fotógrafo",
+    ],
+    correta: 1,
+    explicacao: "A paramentação evita que DNA, digitais e fibras do perito contaminem as provas.",
+  },
+  {
+    pergunta: "Uma amostra aglutinou com Anti-A, Anti-B e Anti-D. Qual o tipo sanguíneo?",
+    opcoes: ["O-", "A+", "B-", "AB+"],
+    correta: 3,
+    explicacao: "Aglutinação nos três soros indica antígenos A, B e fator Rh positivo: AB+.",
+  },
+  {
+    pergunta: "O sangue da vítima é O- e o da lâmina é AB+. O que isso indica?",
+    opcoes: [
+      "A amostra foi contaminada",
+      "Parte do sangue pertence ao agressor",
+      "A vítima mudou de tipo sanguíneo",
+      "Nada de relevante",
+    ],
+    correta: 1,
+    explicacao: "Tipos diferentes na mesma lâmina indicam uma segunda pessoa ferida na luta.",
+  },
+  {
+    pergunta: "O comprimento do pé corresponde, em média, a qual porcentagem da estatura?",
+    opcoes: ["5%", "15%", "25%", "40%"],
+    correta: 1,
+    explicacao: "Cerca de 15% — por isso a pegada permite estimar a altura do autor.",
+  },
+  {
+    pergunta: "Uma pegada de calçado feminino nº 38 sugere estatura aproximada de:",
+    opcoes: ["1,50 m", "1,60 m", "1,70 m", "1,85 m"],
+    correta: 2,
+    explicacao: "Pela tabela de proporção, nº 38 corresponde a cerca de 1,68 m a 1,72 m.",
+  },
+  {
+    pergunta: "Quais são os três padrões datiloscópicos principais?",
     opcoes: [
       "Arco, presilha e verticilo",
       "Linha, curva e espiral",
@@ -233,82 +323,95 @@ export const quiz: QuizQuestion[] = [
       "A, B e AB",
     ],
     correta: 0,
-    explicacao: "Padrões dactiloscópicos: arco, presilha (laço) e verticilo (espiral).",
+    explicacao: "Arco, presilha (laço) e verticilo (espiral) são os padrões básicos.",
   },
   {
-    pergunta: "O sangue A+ significa que:",
+    pergunta: "Uma digital latente é revelada principalmente com:",
+    opcoes: ["Água oxigenada", "Pó revelador e pincel", "Luz solar direta", "Álcool em gel"],
+    correta: 1,
+    explicacao: "Pó revelador adere ao suor e à gordura deixados pela crista papilar.",
+  },
+  {
+    pergunta: "Por que o bulbo de um fio de cabelo é tão valioso?",
     opcoes: [
-      "Não possui antígenos nas hemácias",
-      "Possui antígeno A e fator Rh positivo",
-      "Possui antígenos A e B",
-      "Só pode doar para tipo O",
+      "Porque indica a idade",
+      "Porque contém material genético para exame de DNA",
+      "Porque mostra a cor natural",
+      "Porque resiste ao fogo",
     ],
     correta: 1,
-    explicacao: "Tipo A+ = antígeno A nas hemácias + fator Rh positivo.",
+    explicacao: "O bulbo tem células com núcleo, permitindo o perfil genético.",
   },
   {
-    pergunta: "Qual suspeito tinha ACESSO oficial ao laboratório?",
-    opcoes: ["Ana", "Pedro", "Carla", "Rafael"],
-    correta: 2,
-    explicacao: "Como monitora, Carla possuía cartão de acesso.",
-  },
-  {
-    pergunta: "Qual foi o provável motivo do crime?",
+    pergunta: "Um depoimento que contraria uma prova física deve ser tratado como:",
     opcoes: [
-      "Vingança por reprovação",
-      "Ciúme por bolsa de estudos",
-      "Silenciar denúncia sobre desvio de reagentes",
-      "Discussão sobre trabalho de História",
+      "Verdade, pois a testemunha estava lá",
+      "Indício de contradição a ser investigado",
+      "Prova definitiva de culpa",
+      "Informação irrelevante",
     ],
-    correta: 2,
-    explicacao: "Lucas iria denunciar Carla por desviar reagentes.",
+    correta: 1,
+    explicacao: "A prova material prevalece; a contradição orienta a investigação.",
   },
   {
-    pergunta: "O que é uma prova digital em investigação criminal?",
+    pergunta: "O que caracteriza uma prova digital?",
     opcoes: [
-      "Uma prova impressa em papel",
-      "Qualquer informação armazenada eletronicamente que possa ser usada como evidência",
-      "Uma digital coletada com scanner",
+      "Qualquer prova impressa",
+      "Informação armazenada eletronicamente usada como evidência",
+      "Somente digitais coletadas por scanner",
       "Fotos tiradas por celular",
     ],
     correta: 1,
-    explicacao: "Provas digitais incluem logs, mensagens, e-mails, arquivos, metadados.",
-  },
-  {
-    pergunta: "Por que o sangue encontrado NÃO pertence à vítima?",
-    opcoes: [
-      "Porque a vítima não sangrou",
-      "Porque tem tipagem diferente da vítima (O-)",
-      "Porque estava seco",
-      "Porque foi analisado tarde demais",
-    ],
-    correta: 1,
-    explicacao: "Vítima é O-; o sangue da cena é A+. Pertence ao agressor.",
-  },
-  {
-    pergunta: "Qual conceito estuda a comparação de escrita manual?",
-    opcoes: ["Balística", "Documentoscopia", "Toxicologia", "Entomologia forense"],
-    correta: 1,
-    explicacao: "Documentoscopia/grafotécnica analisa autoria e autenticidade de escritos.",
-  },
-  {
-    pergunta: "O que é um álibi?",
-    opcoes: [
-      "Uma prova biológica",
-      "Justificativa de onde a pessoa estava no momento do crime",
-      "Um tipo de digital",
-      "Um documento oficial",
-    ],
-    correta: 1,
-    explicacao: "Álibi é a comprovação de estar em outro local no momento do fato.",
-  },
-  {
-    pergunta: "Qual suspeito teve OPORTUNIDADE + MEIO + MOTIVO?",
-    opcoes: ["Ana", "Pedro", "Carla", "Rafael"],
-    correta: 2,
-    explicacao:
-      "Carla tinha acesso (meio), estava no local no horário (oportunidade) e temia ser denunciada (motivo).",
+    explicacao: "Logs, mensagens, metadados e arquivos são provas digitais.",
   },
 ];
 
-export const CULPADO: SuspectId = "carla";
+export interface Prova {
+  id: string;
+  rotulo: string;
+  correta: boolean;
+}
+
+export const provasAcusacao: Prova[] = [
+  { id: "p1", rotulo: "Pegada de calçado feminino nº 38 compatível com 1,70 m", correta: true },
+  { id: "p2", rotulo: "Sangue AB+ na lâmina, igual ao tipo da acusada", correta: true },
+  { id: "p3", rotulo: "Digital do cabo da faca com 14 pontos coincidentes", correta: true },
+  { id: "p4", rotulo: "Fio de cabelo loiro preso na lâmina", correta: true },
+  { id: "p5", rotulo: "Mensagem da vítima cobrando dinheiro da galeria", correta: true },
+  { id: "p6", rotulo: "Depoimento do segurança sobre o empurra-empurra", correta: false },
+  { id: "p7", rotulo: "Porta dos fundos trancada por dentro às 22h20", correta: false },
+  { id: "p8", rotulo: "Cabelo grisalho de um dos convidados", correta: false },
+];
+
+export const passosDoJogo = [
+  {
+    titulo: "Paramentação",
+    texto: "Vista jaleco, luvas e máscara antes de entrar na área isolada.",
+    icone: "🥼",
+  },
+  {
+    titulo: "Bancada de tipagem",
+    texto: "Teste as amostras com os soros Anti-A, Anti-B e Anti-D e anote os tipos.",
+    icone: "🧪",
+  },
+  {
+    titulo: "Análise da pegada",
+    texto: "Meça a pegada com a régua e estime a estatura pela tabela de proporção.",
+    icone: "📏",
+  },
+  {
+    titulo: "Consulta no app",
+    texto: "Digite os 6 códigos das placas para abrir as fichas e ler os depoimentos.",
+    icone: "🔎",
+  },
+  {
+    titulo: "Quiz de perícia",
+    texto: "Acerte as questões para liberar o laudo das digitais e o celular da vítima.",
+    icone: "🧠",
+  },
+  {
+    titulo: "Veredito",
+    texto: "Elimine os incompatíveis e envie a acusação com as provas que a sustentam.",
+    icone: "⚖️",
+  },
+];
